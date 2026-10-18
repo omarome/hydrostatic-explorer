@@ -9,14 +9,24 @@
         <Grid RowDefinitions="Auto,*,Auto">
             <DockPanel Grid.Row="0" Margin="4,0,4,4">
                 <TextBlock DockPanel.Dock="Right" Text="{Binding HullName}" Classes="muted" VerticalAlignment="Center" />
-                <TextBlock Text="Hull side view" Classes="panel-title" />
+                <TextBlock Text="Hull view" Classes="panel-title" />
             </DockPanel>
 
-            <!-- Our custom control. Its StyledProperties are bound like any built-in control's. -->
-            <controls:HullProfileView Grid.Row="1"
-                                      Length="{Binding Length}"
-                                      Depth="{Binding Depth}"
-                                      Draft="{Binding Draft}" />
+            <!-- Two drawings of the same hull, one per tab. Both are our custom controls; their
+                 StyledProperties are bound like any built-in control's. -->
+            <TabControl Grid.Row="1" Padding="0">
+                <TabItem Header="Side">
+                    <controls:HullProfileView Length="{Binding Length}"
+                                              Depth="{Binding Depth}"
+                                              Draft="{Binding Draft}" />
+                </TabItem>
+                <TabItem Header="Isometric">
+                    <controls:HullIsometricView Length="{Binding Length}"
+                                                Beam="{Binding Beam}"
+                                                Depth="{Binding Depth}"
+                                                Draft="{Binding Draft}" />
+                </TabItem>
+            </TabControl>
 
             <!-- Draft slider: another way to change the shared selection. Its range is 0.10 m to the
                  hull depth; moving it selects the nearest whole-centimetre draft. -->

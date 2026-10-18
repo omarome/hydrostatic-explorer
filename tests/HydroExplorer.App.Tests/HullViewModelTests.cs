@@ -20,6 +20,7 @@ public class HullViewModelTests
     public void WithNothingSelected_HasNoHullAndNoWaterline()
     {
         Assert.Equal(0, _vm.Length);
+        Assert.Equal(0, _vm.Beam);
         Assert.Equal(0, _vm.Depth);
         Assert.Null(_vm.Draft);
     }
@@ -31,6 +32,7 @@ public class HullViewModelTests
 
         Assert.Equal("Coastal Barge", _vm.HullName);
         Assert.Equal(80, _vm.Length);
+        Assert.Equal(16, _vm.Beam);
         Assert.Equal(7, _vm.Depth);
         Assert.Null(_vm.Draft);
     }
