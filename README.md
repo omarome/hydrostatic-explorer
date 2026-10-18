@@ -41,6 +41,17 @@ Then start the desktop app in a second terminal:
 dotnet run --project src/HydroExplorer.App
 ```
 
+The app reads the API address from `src/HydroExplorer.App/appsettings.json` (`Api:BaseUrl`, default
+`http://localhost:5080/`). If the API isn't running, the app shows an error banner with a **Retry** button.
+Start the API and click Retry.
+
+### Using the app
+
+- **Hull**: pick a hull in the top bar. The table reloads at page 1.
+- **Paging**: ⏮ ◀ ▶ ⏭ buttons below the table, plus "Rows per page" (25 / 50 / 100). ⟳ reloads the current page.
+- **Sorting**: click the **T**, **Δ** or **KM** column header to sort the whole table on the server. Click
+  again to reverse. The ▲/▼ arrow shows the current sort.
+
 ## API reference
 
 | Endpoint | Returns |

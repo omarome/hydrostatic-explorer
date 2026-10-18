@@ -1,0 +1,107 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:HydroExplorer.App.ViewModels"
+             xmlns:models="using:HydroExplorer.Core.Models"
+             x:Class="HydroExplorer.App.Views.HydroTableView"
+             x:DataType="vm:HydroTableViewModel">
+
+    <!-- Rows: error banner, loading bar, the grid (takes the remaining height), paging bar. -->
+    <Grid RowDefinitions="Auto,Auto,*,Auto">
+
+        <!-- Error banner: only visible when HasError is true. -->
+        <Border Grid.Row="0" Classes="error" IsVisible="{Binding HasError}">
+            <DockPanel>
+                <Button DockPanel.Dock="Right" Content="Retry" Command="{Binding RefreshCommand}" />
+                <TextBlock Text="{Binding ErrorMessage}" TextWrapping="Wrap" VerticalAlignment="Center" />
+            </DockPanel>
+        </Border>
+
+        <!-- Thin loading bar. It takes no space when hidden, so a Height keeps the layout steady. -->
+        <Panel Grid.Row="1" Height="4">
+            <ProgressBar IsIndeterminate="True" IsVisible="{Binding IsLoading}" MinHeight="4" />
+        </Panel>
+
+        <!-- The DataGrid shows only the current page. Sorting goes to the server: the Sorting event
+             is handled in code-behind (HydroTableView.axaml.cs), which calls SortByCommand. -->
+        <DataGrid Grid.Row="2"
+                  x:Name="TableGrid"
+                  ItemsSource="{Binding Rows}"
+                  SelectedItem="{Binding SelectedRow}"
+                  IsReadOnly="True"
+                  SelectionMode="Single"
+                  CanUserReorderColumns="False"
+                  CanUserResizeColumns="True"
+                  GridLinesVisibility="Horizontal"
+                  Sorting="OnGridSorting">
+            <!-- Each column binds to a property of one HydrostaticRow, hence x:DataType on the column.
+                 CanUserSort / SortMemberPath mark the three columns the API can sort by.
+                 StringFormat: F2 = fixed 2 decimals, N1 = thousands separator + 1 decimal. -->
+            <DataGrid.Columns>
+                <DataGridTextColumn x:DataType="models:HydrostaticRow" Header="T (m)"
+                                    Binding="{Binding Draft, StringFormat={}{0:F2}}"
+                                    SortMemberPath="draft" CanUserSort="True" CellStyleClasses="number" />
+                <DataGridTextColumn x:DataType="models:HydrostaticRow" Header="∇ (m³)"
+                                    Binding="{Binding Volume, StringFormat={}{0:N1}}"
+                                    CanUserSort="False" CellStyleClasses="number" />
+                <DataGridTextColumn x:DataType="models:HydrostaticRow" Header="Δ (t)"
+                                    Binding="{Binding Displacement, StringFormat={}{0:N1}}"
+                                    SortMemberPath="displacement" CanUserSort="True" CellStyleClasses="number" />
+                <DataGridTextColumn x:DataType="models:HydrostaticRow" Header="Awp (m²)"
+                                    Binding="{Binding WaterplaneArea, StringFormat={}{0:N0}}"
+                                    CanUserSort="False" CellStyleClasses="number" />
+                <DataGridTextColumn x:DataType="models:HydrostaticRow" Header="TPC (t/cm)"
+                                    Binding="{Binding Tpc, StringFormat={}{0:F2}}"
+                                    CanUserSort="False" CellStyleClasses="number" />
+                <DataGridTextColumn x:DataType="models:HydrostaticRow" Header="KB (m)"
+                                    Binding="{Binding Kb, StringFormat={}{0:F3}}"
+                                    CanUserSort="False" CellStyleClasses="number" />
+                <DataGridTextColumn x:DataType="models:HydrostaticRow" Header="BM (m)"
+                                    Binding="{Binding Bm, StringFormat={}{0:F3}}"
+                                    CanUserSort="False" CellStyleClasses="number" />
+                <DataGridTextColumn x:DataType="models:HydrostaticRow" Header="KM (m)"
+                                    Binding="{Binding Km, StringFormat={}{0:F3}}"
+                                    SortMemberPath="km" CanUserSort="True" CellStyleClasses="number" />
+                <DataGridTextColumn x:DataType="models:HydrostaticRow" Header="BML (m)"
+                                    Binding="{Binding Bml, StringFormat={}{0:N1}}"
+                                    CanUserSort="False" CellStyleClasses="number" />
+                <DataGridTextColumn x:DataType="models:HydrostaticRow" Header="MCT (t·m/cm)"
+                                    Binding="{Binding Mct, StringFormat={}{0:F1}}"
+                                    CanUserSort="False" CellStyleClasses="number" />
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <!-- Paging bar -->
+        <DockPanel Grid.Row="3" Margin="0,8,0,0" LastChildFill="False">
+            <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" Spacing="4">
+                <Button Content="⏮" ToolTip.Tip="First page" Command="{Binding FirstPageCommand}" />
+                <Button Content="◀" ToolTip.Tip="Previous page" Command="{Binding PreviousPageCommand}" />
+                <TextBlock Text="{Binding PageSummary}" VerticalAlignment="Center" Margin="8,0" MinWidth="200"
+                           TextAlignment="Center" />
+                <Button Content="▶" ToolTip.Tip="Next page" Command="{Binding NextPageCommand}" />
+                <Button Content="⏭" ToolTip.Tip="Last page" Command="{Binding LastPageCommand}" />
+                <Button Content="⟳" ToolTip.Tip="Refresh" Command="{Binding RefreshCommand}" Margin="8,0,0,0" />
+            </StackPanel>
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="8">
+                <TextBlock Text="Rows per page" VerticalAlignment="Center" />
+                <!-- x:Static reads a static property (here the 25/50/100 list) instead of the DataContext. -->
+                <ComboBox ItemsSource="{x:Static vm:HydroTableViewModel.PageSizeOptions}"
+                          SelectedItem="{Binding PageSize}" />
+            </StackPanel>
+        </DockPanel>
+    </Grid>
+
+    <UserControl.Styles>
+        <Style Selector="Border.error">
+            <Setter Property="Background" Value="#33E53935" />
+            <Setter Property="BorderBrush" Value="#E53935" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="4" />
+            <Setter Property="Padding" Value="12,8" />
+            <Setter Property="Margin" Value="0,0,0,8" />
+        </Style>
+        <!-- Right-align numeric cells. -->
+        <Style Selector="DataGridCell.number">
+            <Setter Property="HorizontalContentAlignment" Value="Right" />
+        </Style>
+    </UserControl.Styles>
+</UserControl>

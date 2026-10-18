@@ -1,16 +1,78 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:HydroExplorer.App.ViewModels"
+        xmlns:views="using:HydroExplorer.App.Views"
+        xmlns:models="using:HydroExplorer.Core.Models"
         x:Class="HydroExplorer.App.Views.MainWindow"
         x:DataType="vm:MainViewModel"
         Icon="/Assets/avalonia-logo.ico"
-        Width="1200" Height="760"
+        Width="1280" Height="800" MinWidth="900" MinHeight="560"
         Title="{Binding Title}">
-    <!-- x:DataType tells the compiler which ViewModel this view binds to, so {Binding Title}
-         is checked at build time. WPF note: WPF only has d:DataContext for designer hints. -->
+    <!-- x:DataType tells the compiler which ViewModel this view binds to, so every {Binding}
+         is checked at build time. WPF note: WPF has no compiled bindings (only d:DataContext
+         as a designer hint); a typo in a WPF binding path only shows up as a runtime warning. -->
 
-    <TextBlock Text="{Binding Title}"
-               FontSize="24"
-               HorizontalAlignment="Center"
-               VerticalAlignment="Center" />
+    <!-- DockPanel: children dock to an edge; the last child fills the remaining space. -->
+    <DockPanel>
+
+        <!-- Top bar: hull selector -->
+        <Border DockPanel.Dock="Top" Padding="16,10" BorderThickness="0,0,0,1"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
+            <StackPanel Orientation="Horizontal" Spacing="12">
+                <TextBlock Text="Hull" VerticalAlignment="Center" FontWeight="SemiBold" />
+                <!-- Bindings walk through properties: "Table.Hulls" = DataContext.Table.Hulls. -->
+                <ComboBox ItemsSource="{Binding Table.Hulls}"
+                          SelectedItem="{Binding Table.SelectedHull}"
+                          MinWidth="320">
+                    <ComboBox.ItemTemplate>
+                        <!-- A DataTemplate says how to render one item (like the callback in items.map(...)).
+                             It gets its own x:DataType because its DataContext is a Hull. -->
+                        <DataTemplate x:DataType="models:Hull">
+                            <TextBlock>
+                                <Run Text="{Binding Name}" FontWeight="SemiBold" />
+                                <Run Text="{Binding Length, StringFormat='  L {0:0} m'}" />
+                                <Run Text="{Binding Beam, StringFormat='× B {0:0} m'}" />
+                                <Run Text="{Binding Depth, StringFormat='× D {0:0} m'}" />
+                            </TextBlock>
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+            </StackPanel>
+        </Border>
+
+        <!-- Main area: table on the left, chart and hull view stacked on the right.
+             GridSplitters let the user drag the dividers. -->
+        <Grid ColumnDefinitions="3*,Auto,2*" Margin="8">
+
+            <!-- DataContext="{Binding Table}" hands the child view its own ViewModel (like passing props). -->
+            <views:HydroTableView Grid.Column="0" DataContext="{Binding Table}" />
+
+            <GridSplitter Grid.Column="1" Width="6" Background="Transparent" ResizeDirection="Columns" />
+
+            <Grid Grid.Column="2" RowDefinitions="*,Auto,*">
+                <Border Grid.Row="0" Classes="placeholder">
+                    <TextBlock Text="Hydrostatic curve (Phase 4)" />
+                </Border>
+                <GridSplitter Grid.Row="1" Height="6" Background="Transparent" ResizeDirection="Rows" />
+                <Border Grid.Row="2" Classes="placeholder">
+                    <TextBlock Text="Hull side view (Phase 5)" />
+                </Border>
+            </Grid>
+        </Grid>
+    </DockPanel>
+
+    <Window.Styles>
+        <!-- Avalonia styles use CSS-like selectors: "Border.placeholder" = a Border with class "placeholder".
+             WPF note: WPF has no style classes; you'd use a keyed Style and Style="{StaticResource ...}". -->
+        <Style Selector="Border.placeholder">
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseLowBrush}" />
+            <Setter Property="CornerRadius" Value="4" />
+        </Style>
+        <Style Selector="Border.placeholder > TextBlock">
+            <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Opacity" Value="0.6" />
+        </Style>
+    </Window.Styles>
 </Window>

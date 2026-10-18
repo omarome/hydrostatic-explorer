@@ -109,3 +109,49 @@ floating point). They are correct to 15 significant figures, and the app formats
 **Integration tests use `WebApplicationFactory<Program>`.** It runs the real Program.cs in memory, so routing,
 binding, validation and JSON serialization are all tested together. `public partial class Program` at the bottom of
 Program.cs makes the generated `Program` class visible to the test project.
+
+## Phase 3: app shell and paginated table
+
+**One API client interface, one exception type.** ViewModels depend on `IHydroApiClient`. `HydroApiClient`
+turns every failure into a `HydroApiException` with a message the user can read: connection refused, timeout,
+non-2xx status, bad JSON. ViewModels then catch one exception type and show its message in the error banner.
+The test project has a `FakeHydroApiClient` that serves real data from Core.
+
+**Plain `ServiceCollection` for dependency injection, no Generic Host.** `App.axaml.cs` registers a single
+`HttpClient` (10 s timeout), the API client and the ViewModels as singletons. That's enough for a desktop app with
+one window. `IHttpClientFactory` and the full Generic Host would add concepts without solving a problem here.
+The base URL comes from the app's own `appsettings.json` via `Microsoft.Extensions.Configuration.Json` 8.0.1.
+
+**The table ViewModel owns the hull list**, as the brief says. The hull selector in MainWindow binds to
+`Table.Hulls` and `Table.SelectedHull`. Phase 4 adds the shared selection that the chart and hull view follow.
+
+**Page state changes only on success.** `LoadPageAsync(page)` sets `Rows`, `CurrentPage` and the totals only
+after the request succeeds. A failed "next page" therefore leaves the UI consistent: page 1 is still shown and
+labelled page 1, with the error banner above it.
+
+**A newer request wins.** Each page load cancels the previous one through a `CancellationTokenSource`, ignores
+its own result if it was superseded, and only the latest request clears `IsLoading`. Without this, switching
+hulls quickly could show the first hull's page under the second hull's name. A test answers requests out of
+order to prove it.
+
+**Paging buttons are disabled while loading.** CanExecute includes `!IsLoading`. This prevents double clicks
+from queueing page loads and makes the loading state visible on the buttons too.
+
+**Retry and Refresh are one command.** `RefreshCommand` reloads the hull list if it never loaded, otherwise
+the current page. The error banner's Retry button binds to the same command.
+
+**Server-side sorting through the DataGrid's `Sorting` event.** Left alone, the DataGrid would sort only the
+rows of the current page. The code-behind marks the event handled and calls `SortByCommand` with the column's
+`SortMemberPath` ("draft", "displacement" or "km", the API's names). It also draws ▲/▼ in the header, because
+DataGrid columns aren't in the visual tree and their headers are awkward to bind. Only the three columns the
+API can sort by are sortable. Sorting returns to page 1.
+
+**Lists are replaced, not mutated.** `Rows` and `Hulls` are `IReadOnlyList` properties that get a new list on
+each load (like `setRows(newRows)` in React), not `ObservableCollection`s edited item by item.
+
+**Number formats.** Draft and TPC have 2 decimals; KB, BM and KM have 3 (stability values are read to the mm);
+volume, displacement and BML have thousands separators. Numeric cells are right-aligned via a `number` style
+class on the cells. Formatting follows the OS locale.
+
+**Compiled bindings in DataGrid columns.** Each column sets `x:DataType="models:HydrostaticRow"`, because a
+column's bindings run against a row, not against the view's ViewModel.

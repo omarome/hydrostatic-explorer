@@ -1,12 +1,21 @@
-using CommunityToolkit.Mvvm.ComponentModel;
-
 namespace HydroExplorer.App.ViewModels;
 
-/// <summary>ViewModel for the main window. Phase 0: just a title to prove binding works.</summary>
-public partial class MainViewModel : ViewModelBase
+/// <summary>
+/// ViewModel for the main window. It composes the child ViewModels, much like a React page
+/// component that renders child components and passes each one its props.
+/// </summary>
+public class MainViewModel : ViewModelBase
 {
-    // [ObservableProperty] generates a public "Title" property that raises PropertyChanged,
-    // so the UI updates when it changes (roughly like a useState value).
-    [ObservableProperty]
-    private string _title = "Hydrostatics Explorer";
+    public MainViewModel(HydroTableViewModel table)
+    {
+        Table = table;
+    }
+
+    public string Title => "Hydrostatics Explorer";
+
+    /// <summary>Hull selector and paginated table.</summary>
+    public HydroTableViewModel Table { get; }
+
+    /// <summary>Loads the initial data. Called once when the window opens.</summary>
+    public Task InitializeAsync() => Table.LoadHullsAsync();
 }
