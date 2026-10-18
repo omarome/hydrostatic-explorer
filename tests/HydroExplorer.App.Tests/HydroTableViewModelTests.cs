@@ -11,11 +11,12 @@ public class HydroTableViewModelTests
 {
     // Small Barge (hull 1): 391 rows → 16 pages of 25 (the last has 16 rows).
     private readonly FakeHydroApiClient _api = new();
+    private readonly FakeFileSaveService _fileSave = new();
     private readonly HydroTableViewModel _vm;
 
     public HydroTableViewModelTests()
     {
-        _vm = new HydroTableViewModel(_api, new SelectionService());
+        _vm = new HydroTableViewModel(_api, new SelectionService(), _fileSave);
     }
 
     [Fact]
@@ -231,5 +232,52 @@ public class HydroTableViewModelTests
         Assert.Equal(3, _vm.CurrentPage);  // the late page-2 response did not overwrite page 3
         Assert.Equal(0.60, _vm.Rows[0].Draft);
         Assert.False(_vm.IsLoading);
+    }
+
+    // ---- CSV export ----
+
+    [Fact]
+    public void ExportCsv_IsDisabled_UntilAPageHasLoaded()
+    {
+        Assert.False(_vm.ExportCsvCommand.CanExecute(null));
+    }
+
+    [Fact]
+    public async Task ExportCsv_SavesTheCurrentPage_WithAHeaderAndOneLinePerRow()
+    {
+        await _vm.LoadHullsAsync();
+        await _vm.NextPageCommand.ExecuteAsync(null);
+
+        await _vm.ExportCsvCommand.ExecuteAsync(null);
+
+        Assert.Equal("small-barge-page-2.csv", _fileSave.SuggestedFileName);
+        string[] lines = _fileSave.SavedContent!.TrimEnd().Split("\r\n");
+        Assert.Equal(1 + 25, lines.Length);
+        Assert.StartsWith("draft_m,", lines[0]);
+        Assert.StartsWith("0.35,", lines[1]);  // page 2 starts at 0.35 m
+        Assert.Equal("Saved 25 rows to small-barge-page-2.csv", _vm.ExportStatus);
+    }
+
+    [Fact]
+    public async Task ExportCsv_Cancelled_ShowsNoStatus()
+    {
+        await _vm.LoadHullsAsync();
+        _fileSave.Cancel = true;
+
+        await _vm.ExportCsvCommand.ExecuteAsync(null);
+
+        Assert.Null(_fileSave.SavedContent);
+        Assert.Null(_vm.ExportStatus);
+    }
+
+    [Fact]
+    public async Task ExportCsv_WriteError_IsShownInsteadOfThrown()
+    {
+        await _vm.LoadHullsAsync();
+        _fileSave.Failure = new IOException("Disk full");
+
+        await _vm.ExportCsvCommand.ExecuteAsync(null);
+
+        Assert.Equal("Export failed: Disk full", _vm.ExportStatus);
     }
 }

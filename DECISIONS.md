@@ -322,3 +322,11 @@ keeps a useful size. Colours and the label helper moved to a shared `HullDrawing
 **Wider left margins.** Headless renders showed the "D = 12 m" label clipped at the left edge whenever the
 hull's width limits the scale (the Large Pontoon in a normal-sized panel). This had been the case since Phase 5.
 The side view's left margin went from 80 to 100 px; the isometric view uses 80 px.
+
+**CSV export: formatting in Core, the dialog behind an interface.** `HydrostaticCsvWriter` (Core) turns rows into
+text: InvariantCulture numbers (a comma decimal separator would break the columns), ASCII headers with units,
+at most 6 decimals so floating-point noise like `43726.49999999999` is written as `43726.5`, and `\r\n` line
+ends (RFC 4180). The ViewModel's `ExportCsvCommand` calls `IFileSaveService`, whose real implementation shows
+Avalonia's async save dialog on the main window. Tests use `FakeFileSaveService` to check the file name, content,
+Cancel and write errors without a window. It exports the current page only, as the brief says. Exporting the
+whole table would mean fetching every page, or adding a CSV endpoint to the API.

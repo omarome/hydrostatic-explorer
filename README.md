@@ -58,7 +58,7 @@ Any of them can change it, and the other two follow.
 
 - **Hull**: pick a hull in the top bar. The table reloads at page 1, and the chart and hull view redraw.
 - **Table**: click a row to select its draft. ⏮ ◀ ▶ ⏭ change page, "Rows per page" sets 25 / 50 / 100, and
-  ⟳ reloads. Click the **T**, **Δ** or **KM** header to sort the whole table on the server (click again to reverse).
+  ⟳ reloads. **Export CSV** saves the rows on the current page to a file you choose. Click the **T**, **Δ** or **KM** header to sort the whole table on the server (click again to reverse).
 - **Keyboard** (with the table focused): **↑/↓** move the selection one row and continue onto the next or
   previous page at the page edge. **PageUp/PageDown** change page.
 - **Chart**: displacement against draft. **Click or drag** on it to select the nearest draft. If that row
