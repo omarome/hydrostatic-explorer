@@ -65,3 +65,47 @@ It sits next to the other paging math so it is tested with it.
 
 **Repository interface.** `IHullRepository` / `SeedHullRepository` keeps the API independent of where hulls come from.
 The seed data is a static in-memory list.
+
+## Phase 2: REST API
+
+**Endpoints in their own file.** `Endpoints/HullEndpoints.cs` maps the routes with `MapGroup("/api/hulls")`.
+Program.cs only wires services and middleware. The handlers are named static methods, not inline lambdas, so each
+one is easy to read and to point at.
+
+**Query rules in one place.** `Queries/HydrostaticsQuery.cs` holds the parameter limits, `Validate()` and `Apply()`
+(filter → sort → page). Filtering and sorting happen on the whole table *before* paging. That order is the point of
+server-side paging: page 2 sorted by KM is the 2nd page of the whole sorted table, not page 2 re-sorted.
+
+**Validation returns every error at once.** `Validate()` collects all problems into a dictionary.
+`Results.ValidationProblem` turns it into a 400 ProblemDetails body that names each bad parameter. A separate
+validation library (FluentValidation) would be overkill for six parameters.
+
+**404 is checked before 400.** An unknown hull id returns 404 even if the query parameters are also invalid. The
+resource has to exist before its options matter.
+
+**Sorting is case-insensitive with a tie-breaker.** `sortBy=KM` and `sortDir=DESC` are accepted. Rows with equal
+sort keys are ordered by draft, so pages stay stable. (For a box hull, sorting by displacement gives the same order
+as sorting by draft, because Δ grows linearly with T.)
+
+**Unparsable numbers return 400, not 500.** In Development, minimal APIs throw an exception when a query value
+can't be parsed (for example `page=abc`), and the exception handler turned that into a 500. Setting
+`RouteHandlerOptions.ThrowOnBadRequest = false` makes it a plain 400, which `UseStatusCodePages` turns into
+ProblemDetails.
+
+**The table is generated per request, not cached.** About 1,200 rows of arithmetic takes microseconds. A cache would
+add code and invalidation questions for no measurable gain.
+
+**The curve is sampled, not taken from the table.** `/curve?points=N` computes N evenly spaced drafts from 0.10 m to
+D with the calculator. The chart gets the full curve in one small response, without paging through the table.
+Allowed `points`: 2–1000.
+
+**Simulated latency is middleware plus options.** `SimulatedLatencyMiddleware` delays only `/api` paths, so
+Swagger stays fast. The delay comes from `IOptionsMonitor<SimulatedLatencyOptions>`, so edits to appsettings.json
+apply without a restart, and tests can override it (0 ms normally, 300 ms in the one test that checks the delay).
+
+**JSON numbers are unrounded.** Responses carry raw doubles such as `368.99999999999994` (1.025 × 360 in binary
+floating point). They are correct to 15 significant figures, and the app formats them for display.
+
+**Integration tests use `WebApplicationFactory<Program>`.** It runs the real Program.cs in memory, so routing,
+binding, validation and JSON serialization are all tested together. `public partial class Program` at the bottom of
+Program.cs makes the generated `Program` class visible to the test project.
