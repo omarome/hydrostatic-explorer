@@ -90,13 +90,13 @@ The scaling math (one pixels-per-metre scale to keep the aspect ratio, centred i
 
 ### 8. How is it tested?
 
-- **Core (57 tests):** each formula against hand calculations, drift-free draft generation (exact equality on all
-  1,191 drafts), snapping, interpolation, paging edge cases.
+- **Core (61 tests):** each formula against hand calculations, drift-free draft generation (exact equality on all
+  1,191 drafts), snapping, interpolation, paging edge cases, CSV formatting.
 - **Api (37 tests):** `WebApplicationFactory<Program>` runs the real API in memory: paging metadata, sorting,
   filtering, `page-of` in both sort orders, 400/404 ProblemDetails, Swagger, and the latency middleware.
-- **App (51 tests):** ViewModels with `FakeHydroApiClient` (can fail, or hold responses to test loading states and
+- **App (65 tests):** ViewModels with `FakeHydroApiClient` (can fail, or hold responses to test loading states and
   races); the real `HydroApiClient` against a stub `HttpMessageHandler`, including a Swedish-locale test proving
-  URLs say `3.25`, not `3,25`; layout math for the custom control.
+  URLs say `3.25`, not `3,25`; layout math for both custom controls; CSV export with `FakeFileSaveService`.
 
 The app was also checked end-to-end by rendering the real window headlessly against the running API with
 simulated clicks and key presses. That was a scratch tool, outside the repo.
@@ -123,3 +123,45 @@ simulated clicks and key presses. That was a scratch tool, outside the repo.
   reflection bindings (check the output window for binding errors), tunnel handlers → `Preview*` events,
   `Dispatcher.UIThread` → `Application.Current.Dispatcher`, and the DataGrid / LiveCharts packages → their WPF
   editions.
+
+### 11. How do you debug a WPF app? And this one?
+
+**WPF, in the order I'd reach for things:**
+
+1. **Binding errors first.** A wrong binding path doesn't crash. WPF prints a message to the Output window and
+   the control just shows nothing, for example
+   `System.Windows.Data Error: 40 : BindingExpression path error: 'Draftt' property not found on 'HydroTableViewModel'`.
+   VS 2022 lists them in the **XAML Binding Failures** window. For one binding that's hard to figure out,
+   `diag:PresentationTraceSources.TraceLevel=High` on that binding logs every step: which DataContext it found,
+   which value it got, and whether conversion failed.
+2. **The live UI.** **Live Visual Tree** and **Live Property Explorer** in Visual Studio, or **Snoop** (free,
+   works on any WPF app), show the running element tree, each element's DataContext, its real property values
+   and where each value comes from (local value, style, inherited). XAML Hot Reload lets you edit XAML while
+   the app is running.
+3. **The debugger.** Breakpoints in ViewModels, commands and code-behind. Turn on "break when thrown" for CLR
+   exceptions, because WPF can swallow an exception thrown inside a binding or an event handler.
+4. **Threading.** *"The calling thread cannot access this object because a different thread owns it"* means
+   code touched the UI from a background thread. Fix it with `Dispatcher.Invoke`, or by letting `await` resume
+   on the UI thread. Add global handlers so no exception gets lost: `Application.DispatcherUnhandledException`,
+   `AppDomain.CurrentDomain.UnhandledException` and `TaskScheduler.UnobservedTaskException`.
+5. **Layout, performance and memory.** For layout problems, temporarily give panels a coloured background or set
+   `ShowGridLines="True"` on a Grid. For a slow UI, use the VS Performance Profiler's Application Timeline
+   (time spent in layout and rendering). For memory leaks, compare memory snapshots; in WPF a common cause is an
+   event subscription that's never removed and keeps a view alive.
+
+**In this project (Avalonia):**
+
+- Compiled bindings (`x:DataType`, on by default in the csproj) turn a wrong binding path into a **build error**,
+  so the most common WPF bug can't reach runtime.
+- **F12** in a Debug build opens Avalonia's developer tools (visual tree, properties, styles, events), enabled by
+  `.WithDeveloperTools()` in `Program.cs`. `.LogToTrace()` sends Avalonia's warnings to the debug output.
+- In VS Code with the C# Dev Kit, **F5** starts the app under the debugger with breakpoints, as in Visual Studio.
+- Because the logic is in ViewModels, many bugs are faster to reproduce as a failing xUnit test with
+  `FakeHydroApiClient` than by clicking through the UI.
+- The headless renders used during development (PNG snapshots of the real controls) are another option for
+  drawing bugs in the custom controls.
+
+**Short answer:** "First I check the Output window for binding errors, because that's the usual cause when a
+value just doesn't appear. Then I use Live Visual Tree or Snoop to check the DataContext and the real property
+values. Then breakpoints in the ViewModel, with break-on-thrown exceptions turned on. Because the logic is in
+ViewModels, I can often reproduce the bug in a unit test instead."
