@@ -99,11 +99,14 @@ public class HydrostaticsEndpointTests : IClassFixture<ApiFactory>
     [Fact]
     public async Task GetHydrostatics_SortByKm_OrdersWholeTableByKm()
     {
-        // KM = T/2 + B²/(12T) is not monotonic in draft, so this proves sorting happens before paging.
-        PagedResult<HydrostaticRow> result = await GetPage($"{LargePontoon}?sortBy=km&sortDir=asc&pageSize=200");
+        // KM = T/2 + B²/(12T) is smallest at T = B/√6. For the Coastal Barge (B = 16, D = 7) that is
+        // 6.53 m, inside the table, so the KM order differs from both draft orders. The smallest KM
+        // being first proves the whole table is sorted before paging.
+        PagedResult<HydrostaticRow> result = await GetPage("/api/hulls/2/hydrostatics?sortBy=km&sortDir=asc&pageSize=200");
 
-        double smallestKmInTable = HydrostaticTableGenerator.Generate(new SeedHullRepository().GetById(3)!).Min(r => r.Km);
+        double smallestKmInTable = HydrostaticTableGenerator.Generate(new SeedHullRepository().GetById(2)!).Min(r => r.Km);
         Assert.Equal(smallestKmInTable, result.Items[0].Km);
+        Assert.Equal(6.53, result.Items[0].Draft);
         Assert.Equal(result.Items.OrderBy(r => r.Km), result.Items);
     }
 
