@@ -14,6 +14,9 @@ public interface IHydroApiClient
 
     Task<PagedResult<HydrostaticRow>> GetHydrostaticsAsync(
         int hullId, HydrostaticsPageRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>Evenly sampled (draft, displacement) points across the hull's whole draft range.</summary>
+    Task<IReadOnlyList<CurvePoint>> GetCurveAsync(int hullId, int points, CancellationToken cancellationToken = default);
 }
 
 /// <summary>Which page of the hydrostatic table to fetch, and in what order.</summary>

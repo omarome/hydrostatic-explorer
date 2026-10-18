@@ -29,6 +29,9 @@ public sealed class FakeHydroApiClient : IHydroApiClient
     /// <summary>Every page request received, in order, as (hullId, request).</summary>
     public List<(int HullId, HydrostaticsPageRequest Request)> PageRequests { get; } = new();
 
+    /// <summary>Hull ids of every curve request received, in order.</summary>
+    public List<int> CurveRequests { get; } = new();
+
     public Task<IReadOnlyList<Hull>> GetHullsAsync(CancellationToken cancellationToken = default)
     {
         ThrowIfDown();
@@ -57,6 +60,14 @@ public sealed class FakeHydroApiClient : IHydroApiClient
         }
 
         return Pager.Paginate(rows.ToList(), request.Page, request.PageSize);
+    }
+
+    public Task<IReadOnlyList<CurvePoint>> GetCurveAsync(int hullId, int points, CancellationToken cancellationToken = default)
+    {
+        CurveRequests.Add(hullId);
+        ThrowIfDown();
+        Hull hull = _repository.GetById(hullId) ?? throw new HydroApiException("The API returned 404 Not Found.");
+        return Task.FromResult(HydrostaticCurveSampler.Sample(hull, points));
     }
 
     private void ThrowIfDown()

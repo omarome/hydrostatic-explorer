@@ -31,6 +31,11 @@ public sealed class HydroApiClient : IHydroApiClient
         return GetAsync<PagedResult<HydrostaticRow>>(url, cancellationToken);
     }
 
+    public Task<IReadOnlyList<CurvePoint>> GetCurveAsync(int hullId, int points, CancellationToken cancellationToken = default) =>
+        GetAsync<IReadOnlyList<CurvePoint>>(
+            string.Create(CultureInfo.InvariantCulture, $"api/hulls/{hullId}/hydrostatics/curve?points={points}"),
+            cancellationToken);
+
     /// <summary>GETs <paramref name="url"/> and reads the JSON body, turning every failure into a <see cref="HydroApiException"/>.</summary>
     private async Task<T> GetAsync<T>(string url, CancellationToken cancellationToken)
     {

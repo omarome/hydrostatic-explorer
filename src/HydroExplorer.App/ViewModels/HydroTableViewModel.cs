@@ -30,13 +30,15 @@ public partial class HydroTableViewModel : ViewModelBase
     public static IReadOnlyList<string> SortFields { get; } = new[] { "draft", "displacement", "km" };
 
     private readonly IHydroApiClient _api;
+    private readonly SelectionService _selection;
 
     // Cancels the in-flight page request when a newer one starts (e.g. the user switches hull mid-load).
     private CancellationTokenSource? _pageLoadCancellation;
 
-    public HydroTableViewModel(IHydroApiClient api)
+    public HydroTableViewModel(IHydroApiClient api, SelectionService selection)
     {
         _api = api;
+        _selection = selection;
     }
 
     [ObservableProperty]
@@ -147,6 +149,11 @@ public partial class HydroTableViewModel : ViewModelBase
             }
 
             Rows = result.Items;
+
+            // If the shared selection is on this page (e.g. after paging away and back), highlight it again.
+            // Records compare by value, so a row from a fresh response equals the previously selected one.
+            SelectedRow = Rows.FirstOrDefault(row => row == _selection.SelectedRow);
+
             CurrentPage = result.Page;
             TotalPages = result.TotalPages;
             TotalCount = result.TotalCount;
@@ -175,7 +182,24 @@ public partial class HydroTableViewModel : ViewModelBase
     // Generated partial-method hooks. "_ = SomeAsync()" starts the load without awaiting it
     // ("fire and forget"). That's safe here because LoadPageAsync catches its own errors.
 
-    partial void OnSelectedHullChanged(Hull? value) => _ = LoadPageAsync(1);
+    partial void OnSelectedHullChanged(Hull? value)
+    {
+        _selection.SelectedHull = value;  // also clears the shared row selection
+        _ = LoadPageAsync(1);
+    }
+
+    /// <summary>
+    /// Publishes the row the user clicked to the shared selection. A null row is ignored: the DataGrid
+    /// clears its selection whenever the page changes, but the selected draft should stay selected
+    /// (and stay marked in the chart) while the user pages through the table.
+    /// </summary>
+    partial void OnSelectedRowChanged(HydrostaticRow? value)
+    {
+        if (value is not null)
+        {
+            _selection.SelectedRow = value;
+        }
+    }
 
     partial void OnPageSizeChanged(int value) => _ = LoadPageAsync(1);
 

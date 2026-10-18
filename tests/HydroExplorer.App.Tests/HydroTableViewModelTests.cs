@@ -1,3 +1,4 @@
+using HydroExplorer.App.Services;
 using HydroExplorer.App.ViewModels;
 
 namespace HydroExplorer.App.Tests;
@@ -14,7 +15,7 @@ public class HydroTableViewModelTests
 
     public HydroTableViewModelTests()
     {
-        _vm = new HydroTableViewModel(_api);
+        _vm = new HydroTableViewModel(_api, new SelectionService());
     }
 
     [Fact]

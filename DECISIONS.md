@@ -155,3 +155,54 @@ class on the cells. Formatting follows the OS locale.
 
 **Compiled bindings in DataGrid columns.** Each column sets `x:DataType="models:HydrostaticRow"`, because a
 column's bindings run against a row, not against the view's ViewModel.
+
+## Phase 4: chart and shared selection
+
+**Shared selection: a `SelectionService`, not `WeakReferenceMessenger`.** `SelectionService` is an
+`ObservableObject` with two properties, `SelectedHull` and `SelectedRow`. It is registered as a DI singleton and
+injected into every ViewModel that needs the selection. Views write to it, and they react to its `PropertyChanged`
+event.
+
+Why a service rather than CommunityToolkit's messenger:
+
+- **It holds state, not just events.** Any ViewModel can read the current selection at any time. With a messenger,
+  a ViewModel created after a "selection changed" message missed it, and someone has to remember the last value.
+- **One place for invariants.** Changing the hull clears the row, inside the service, before anyone is notified.
+  With messages, every receiver would have to apply that rule itself.
+- **Explicit dependencies.** A ViewModel's constructor shows that it takes part in the selection. With a static
+  messenger, the senders and receivers of a message type can only be found by searching.
+- **Easy to test.** Tests create a `new SelectionService()` and pass it to the ViewModels. There is no global
+  messenger to reset between tests.
+
+The messenger's advantage is fully decoupled, many-to-many broadcasting with weak references, so a short-lived
+ViewModel that forgets to unsubscribe doesn't leak. Here every ViewModel is an app-lifetime singleton, so a
+plain `+=` subscription is safe and never needs removing. If ViewModels were created and discarded (tabs,
+dialogs), they would need to unsubscribe, or the messenger would be the better fit.
+
+**React comparison.** This is "lifting state up". In React, the shared selection would live in the closest common
+parent (or a context provider), and the table, chart and hull view would receive `selection` and `onSelect` as
+props. Here the common owner is the `SelectionService`, DI plays the role of the context provider, and
+`PropertyChanged` is the re-render trigger. The difference: in React the data flows down and re-rendering does the
+rest. In MVVM each ViewModel subscribes and decides what to do itself (for example, the chart reloads on a hull
+change but only moves the marker on a row change).
+
+**The table publishes only non-null rows.** The DataGrid clears its selection whenever a new page arrives. If that
+null reached the shared selection, paging through the table would erase the chart marker. The table ignores null
+selections, and after loading a page it re-highlights the shared row if that row is on the page. Records compare
+by value, so a row from a fresh response equals the selected one.
+
+**The chart ViewModel has plain state plus LiveCharts objects.** `Curve` (a list of `CurvePoint`) and `Marker` are
+the state that tests check. The series, axes and the dashed marker line (a `RectangularSection` with Xi = Xj) are
+created once in the constructor and updated from that state in `OnCurveChanged` / `OnMarkerChanged`. LiveCharts
+types appear only in the chart ViewModel. Keeping them out entirely would need a mapping layer in the view, which
+is more code for the same result.
+
+**Selecting a row never calls the API.** The marker uses the row's own draft and displacement. A test checks that
+the curve request count stays at 1. A new hull clears the old curve immediately, so the previous hull's curve is
+never shown under the new hull's name, then loads the new one (with the same cancel-the-previous-request pattern
+as the table).
+
+**The chart has its own error and Retry.** If the curve fails to load, the chart shows the message and a Retry
+button bound to `LoadCurveCommand`, separate from the table's banner. Each panel recovers on its own.
+
+**Short animations.** `AnimationsSpeed` is 150 ms, so the marker moves "immediately" but visibly.

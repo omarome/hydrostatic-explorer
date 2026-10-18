@@ -1,0 +1,35 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:HydroExplorer.App.ViewModels"
+             xmlns:lvc="using:LiveChartsCore.SkiaSharpView.Avalonia"
+             x:Class="HydroExplorer.App.Views.HydroChartView"
+             x:DataType="vm:HydroChartViewModel">
+
+    <Border Classes="panel">
+        <Grid RowDefinitions="Auto,*">
+            <!-- Header: title on the left, the selected point's values on the right. -->
+            <DockPanel Grid.Row="0" Margin="4,0,4,4">
+                <TextBlock DockPanel.Dock="Right" Text="{Binding MarkerLabel}" Opacity="0.8"
+                           VerticalAlignment="Center" />
+                <TextBlock Text="Hydrostatic curve" FontWeight="SemiBold" VerticalAlignment="Center" />
+            </DockPanel>
+
+            <!-- LiveCharts2 chart. Series, axes and sections are objects owned by the ViewModel. -->
+            <lvc:CartesianChart Grid.Row="1"
+                                Series="{Binding Series}"
+                                XAxes="{Binding XAxes}"
+                                YAxes="{Binding YAxes}"
+                                Sections="{Binding Sections}"
+                                AnimationsSpeed="00:00:00.150" />
+
+            <!-- Loading and error overlays sit on top of the chart (same Grid row). -->
+            <ProgressBar Grid.Row="1" IsIndeterminate="True" IsVisible="{Binding IsLoading}"
+                         VerticalAlignment="Top" MinHeight="4" Height="4" />
+            <StackPanel Grid.Row="1" IsVisible="{Binding HasError}" Spacing="8"
+                        HorizontalAlignment="Center" VerticalAlignment="Center">
+                <TextBlock Text="{Binding ErrorMessage}" TextWrapping="Wrap" MaxWidth="320" TextAlignment="Center" />
+                <Button Content="Retry" HorizontalAlignment="Center" Command="{Binding LoadCurveCommand}" />
+            </StackPanel>
+        </Grid>
+    </Border>
+</UserControl>

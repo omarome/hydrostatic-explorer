@@ -50,11 +50,9 @@
             <GridSplitter Grid.Column="1" Width="6" Background="Transparent" ResizeDirection="Columns" />
 
             <Grid Grid.Column="2" RowDefinitions="*,Auto,*">
-                <Border Grid.Row="0" Classes="placeholder">
-                    <TextBlock Text="Hydrostatic curve (Phase 4)" />
-                </Border>
+                <views:HydroChartView Grid.Row="0" DataContext="{Binding Chart}" />
                 <GridSplitter Grid.Row="1" Height="6" Background="Transparent" ResizeDirection="Rows" />
-                <Border Grid.Row="2" Classes="placeholder">
+                <Border Grid.Row="2" Classes="panel">
                     <TextBlock Text="Hull side view (Phase 5)" />
                 </Border>
             </Grid>
@@ -62,14 +60,16 @@
     </DockPanel>
 
     <Window.Styles>
-        <!-- Avalonia styles use CSS-like selectors: "Border.placeholder" = a Border with class "placeholder".
+        <!-- Avalonia styles use CSS-like selectors: "Border.panel" = a Border with class "panel".
+             Styles declared on the Window also apply inside child UserControls.
              WPF note: WPF has no style classes; you'd use a keyed Style and Style="{StaticResource ...}". -->
-        <Style Selector="Border.placeholder">
+        <Style Selector="Border.panel">
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseLowBrush}" />
             <Setter Property="CornerRadius" Value="4" />
+            <Setter Property="Padding" Value="8" />
         </Style>
-        <Style Selector="Border.placeholder > TextBlock">
+        <Style Selector="Border.panel > TextBlock">
             <Setter Property="HorizontalAlignment" Value="Center" />
             <Setter Property="VerticalAlignment" Value="Center" />
             <Setter Property="Opacity" Value="0.6" />

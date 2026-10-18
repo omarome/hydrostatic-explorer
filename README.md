@@ -51,6 +51,9 @@ Start the API and click Retry.
 - **Paging**: ⏮ ◀ ▶ ⏭ buttons below the table, plus "Rows per page" (25 / 50 / 100). ⟳ reloads the current page.
 - **Sorting**: click the **T**, **Δ** or **KM** column header to sort the whole table on the server. Click
   again to reverse. The ▲/▼ arrow shows the current sort.
+- **Selection**: click a row. The chart marks that draft with an orange dot and a dashed line, and shows its
+  values above the chart. The selection stays marked while you page through the table.
+- **Chart**: displacement against draft for the selected hull, loaded once per hull from `/curve`.
 
 ## API reference
 
