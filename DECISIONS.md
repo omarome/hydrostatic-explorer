@@ -37,3 +37,31 @@ to set up on a fresh machine. That's fine for a localhost demo.
 **.NET SDK install location.** The SDK was installed per user into `~/.dotnet` with Microsoft's
 `dotnet-install.sh`, which needs no admin rights. `~/.zshrc` adds it to `PATH` and sets `DOTNET_ROOT`.
 A system-wide install from the official .pkg works the same way.
+
+## Phase 1: core domain
+
+**Static calculator and generator.** `HydrostaticsCalculator` and `HydrostaticTableGenerator` are pure functions
+with no state or dependencies, so they are `static` classes. There is nothing to swap out in tests, so an interface
+would add ceremony without a benefit.
+
+**Rows hold unrounded values.** Only drafts are rounded (to 2 decimals). Displacement, KM and the other values
+keep full precision, and the UI formats them for display. Rounding in the domain would lose precision in later
+calculations, such as interpolation for the curve.
+
+**Drafts come from integer centimetres.** The generator loops over whole centimetres (10, 11, … D·100) and computes
+`cm / 100.0` for each row. Adding 0.01 repeatedly would drift: row 315 would hold 3.2499999999999747, not 3.25. A
+test checks every draft for exact equality.
+
+**Validation throws exceptions.** A non-positive, NaN or infinite hull dimension throws `ArgumentException`. A draft
+outside (0, D] throws `ArgumentOutOfRangeException`. The API (Phase 2) validates its query parameters first and
+returns 400, so these exceptions mean a programming error, not bad user input.
+
+**A page past the end returns no items, not an error.** `Pager.Paginate` rejects `page < 1` or `pageSize < 1`. Asking
+for page 49 of 48 returns empty `Items` with the correct `TotalCount` and `TotalPages`, so a client can recover by
+jumping to the last page. An empty source has `TotalPages = 0`.
+
+**`Pager.PageOfIndex` added now.** It is a one-line helper that Phase 6's "page containing draft X" endpoint will need.
+It sits next to the other paging math so it is tested with it.
+
+**Repository interface.** `IHullRepository` / `SeedHullRepository` keeps the API independent of where hulls come from.
+The seed data is a static in-memory list.
