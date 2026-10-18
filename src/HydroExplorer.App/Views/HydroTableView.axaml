@@ -90,6 +90,10 @@
                 <!-- x:Static reads a static property (here the 25/50/100 list) instead of the DataContext. -->
                 <ComboBox ItemsSource="{x:Static vm:HydroTableViewModel.PageSizeOptions}"
                           SelectedItem="{Binding PageSize}" />
+                <Button Content="Export CSV" ToolTip.Tip="Save the rows on this page as a CSV file"
+                        Command="{Binding ExportCsvCommand}" Margin="16,0,0,0" />
+                <TextBlock Text="{Binding ExportStatus}" Classes="muted" VerticalAlignment="Center"
+                           TextTrimming="CharacterEllipsis" MaxWidth="320" />
             </StackPanel>
         </WrapPanel>
     </Grid>

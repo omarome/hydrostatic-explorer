@@ -2,6 +2,7 @@ using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using HydroExplorer.App.Services;
+using HydroExplorer.Core.Export;
 using HydroExplorer.Core.Models;
 using HydroExplorer.Core.Paging;
 
@@ -32,14 +33,16 @@ public partial class HydroTableViewModel : ViewModelBase
 
     private readonly IHydroApiClient _api;
     private readonly SelectionService _selection;
+    private readonly IFileSaveService _fileSave;
 
     // Cancels the in-flight page request when a newer one starts (e.g. the user switches hull mid-load).
     private CancellationTokenSource? _pageLoadCancellation;
 
-    public HydroTableViewModel(IHydroApiClient api, SelectionService selection)
+    public HydroTableViewModel(IHydroApiClient api, SelectionService selection, IFileSaveService fileSave)
     {
         _api = api;
         _selection = selection;
+        _fileSave = fileSave;
         _selection.PropertyChanged += OnSelectionChanged;  // app-lifetime singletons: no unsubscribe needed
     }
 
@@ -50,6 +53,7 @@ public partial class HydroTableViewModel : ViewModelBase
     private Hull? _selectedHull;
 
     [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(ExportCsvCommand))]
     private IReadOnlyList<HydrostaticRow> _rows = Array.Empty<HydrostaticRow>();
 
     /// <summary>The highlighted row: the shared selected draft, if it is on the current page.</summary>
@@ -82,7 +86,8 @@ public partial class HydroTableViewModel : ViewModelBase
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(FirstPageCommand), nameof(PreviousPageCommand),
-                                nameof(NextPageCommand), nameof(LastPageCommand), nameof(RefreshCommand))]
+                                nameof(NextPageCommand), nameof(LastPageCommand), nameof(RefreshCommand),
+                                nameof(ExportCsvCommand))]
     private bool _isLoading;
 
     [ObservableProperty]
@@ -90,6 +95,10 @@ public partial class HydroTableViewModel : ViewModelBase
     private string? _errorMessage;
 
     public bool HasError => ErrorMessage is not null;
+
+    /// <summary>Result of the last CSV export ("Saved …" or why it failed), or null before any export.</summary>
+    [ObservableProperty]
+    private string? _exportStatus;
 
     /// <summary>For example "Page 3 of 48 (1,191 rows)".</summary>
     public string PageSummary => TotalPages == 0
@@ -339,6 +348,34 @@ public partial class HydroTableViewModel : ViewModelBase
 
         return LoadPageAsync(1);
     }
+
+    /// <summary>
+    /// Saves the rows on the current page as CSV. The user picks the file; cancelling does nothing.
+    /// Formatting is in Core (HydrostaticCsvWriter); the dialog and file writing are behind IFileSaveService.
+    /// </summary>
+    [RelayCommand(CanExecute = nameof(CanExport))]
+    private async Task ExportCsvAsync()
+    {
+        string fileName = $"{Slug(SelectedHull?.Name ?? "hull")}-page-{CurrentPage}.csv";
+        string csv = HydrostaticCsvWriter.ToCsv(Rows);
+        try
+        {
+            string? savedAs = await _fileSave.SaveTextAsync(fileName, csv);
+            if (savedAs is not null)
+            {
+                ExportStatus = $"Saved {Rows.Count} rows to {savedAs}";
+            }
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            ExportStatus = $"Export failed: {ex.Message}";
+        }
+    }
+
+    /// <summary>"Large Pontoon" → "large-pontoon", for a file name without spaces.</summary>
+    private static string Slug(string name) => name.Trim().ToLowerInvariant().Replace(' ', '-');
+
+    private bool CanExport() => !IsLoading && Rows.Count > 0;
 
     private bool CanGoBack() => !IsLoading && CurrentPage > 1;
 

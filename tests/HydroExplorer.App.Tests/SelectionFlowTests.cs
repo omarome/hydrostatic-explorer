@@ -22,7 +22,7 @@ public class SelectionFlowTests
 
     public SelectionFlowTests()
     {
-        _table = new HydroTableViewModel(_api, _selection);
+        _table = new HydroTableViewModel(_api, _selection, new FakeFileSaveService());
         _chart = new HydroChartViewModel(_api, _selection);
         _hull = new HullViewModel(_selection);
     }
