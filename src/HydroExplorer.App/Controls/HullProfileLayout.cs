@@ -11,7 +11,7 @@ namespace HydroExplorer.App.Controls;
 public sealed record HullProfileLayout(Rect Hull, double Scale)
 {
     /// <summary>Room around the hull for labels: depth on the left, length below, "BL"/"WL" on the right.</summary>
-    public static readonly Thickness Margins = new(left: 80, top: 32, right: 48, bottom: 56);
+    public static readonly Thickness Margins = new(left: 100, top: 32, right: 48, bottom: 56);
 
     /// <summary>Returns null when there is nothing sensible to draw (no hull, or no room).</summary>
     public static HullProfileLayout? Create(Size available, double length, double depth)

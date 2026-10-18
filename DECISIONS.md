@@ -308,3 +308,17 @@ page-size selector moves onto a second line instead of being clipped.
 input (`MouseDown` on the chart, `KeyPress` on the grid, a slider move) against the running API, and to
 capture PNGs in light, dark, minimum size and API-down states. That checked the code-behind paths that ViewModel
 tests can't reach. It stays outside the repo.
+
+## Stretch: isometric view and CSV export
+
+**Isometric view as a second custom control, not a 3D engine.** `HullIsometricView` uses the same approach as
+the side view: StyledProperties marked `AffectsRender` and a `Render` override. The projection
+(`u = (x − y)·cos30°`, `v = z + (x + y)·sin30°`, one scale on all axes) lives in `HullIsometricLayout`, which is
+pure math and unit-tested like `HullProfileLayout`. The box is drawn as a "glass box" (hidden edges dashed,
+submerged faces shaded, translucent waterplane) instead of solid faces, so the waterplane inside stays visible
+and no painter's-algorithm sorting is needed. The two views share a tab instead of splitting the panel, so each
+keeps a useful size. Colours and the label helper moved to a shared `HullDrawing` class.
+
+**Wider left margins.** Headless renders showed the "D = 12 m" label clipped at the left edge whenever the
+hull's width limits the scale (the Large Pontoon in a normal-sized panel). This had been the case since Phase 5.
+The side view's left margin went from 80 to 100 px; the isometric view uses 80 px.

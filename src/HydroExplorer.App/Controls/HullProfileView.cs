@@ -1,10 +1,9 @@
-using System.Globalization;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Documents;
 using Avalonia.Layout;
 using Avalonia.Media;
-using Avalonia.Media.Immutable;
+using static HydroExplorer.App.Controls.HullDrawing;  // DrawLabel, Format, the water brushes
 
 namespace HydroExplorer.App.Controls;
 
@@ -85,13 +84,8 @@ public sealed class HullProfileView : Control
 
     // ---- Drawing ----
 
-    private const double LabelFontSize = 12;
     private const double LineOverhang = 16;  // how far waterline/baseline extend past the hull ends (px)
     private const double LabelOffset = 8;    // vertical gap between a line and its "WL"/"BL" label (px)
-
-    private static readonly IBrush SeaBrush = new ImmutableSolidColorBrush(Color.Parse("#331E88E5"));
-    private static readonly IBrush SubmergedBrush = new ImmutableSolidColorBrush(Color.Parse("#991E88E5"));
-    private static readonly IPen WaterlinePen = new ImmutablePen(Color.Parse("#1E88E5").ToUInt32(), 2);
 
     // WPF note: WPF's equivalent is OnRender(DrawingContext). Both record drawing commands that the
     // framework replays; neither draws directly to the screen while the method runs.
@@ -140,10 +134,7 @@ public sealed class HullProfileView : Control
 
         // 5. Caption above the hull: the current draft, or a hint. Above the deck it can't collide with
         //    the drawing, even when the hull is only a few pixels tall.
-        string caption = draft is null
-            ? "Select a draft to show the waterline"
-            : Format($"Waterline at T = {draft:F2} m");
-        DrawLabel(context, caption, new Point(hull.Center.X, Math.Max(hull.Top - 14, 8)), foreground, HorizontalAlignment.Center);
+        DrawLabel(context, Caption(draft), new Point(hull.Center.X, Math.Max(hull.Top - 14, 8)), foreground, HorizontalAlignment.Center);
 
         // 6. Length dimension below the hull: |<—— L = 120 m ——>|
         double dimY = hull.Bottom + 28;
@@ -173,21 +164,4 @@ public sealed class HullProfileView : Control
             context.DrawLine(pen, new Point(at.X - half, at.Y), new Point(at.X + half, at.Y));
         }
     }
-
-    /// <summary>Draws <paramref name="text"/> vertically centred on <paramref name="anchor"/>.</summary>
-    private static void DrawLabel(DrawingContext context, string text, Point anchor, IBrush brush, HorizontalAlignment alignment)
-    {
-        var formatted = new FormattedText(
-            text, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, Typeface.Default, LabelFontSize, brush);
-
-        double x = alignment switch
-        {
-            HorizontalAlignment.Center => anchor.X - formatted.Width / 2,
-            HorizontalAlignment.Right => anchor.X - formatted.Width,
-            _ => anchor.X,
-        };
-        context.DrawText(formatted, new Point(x, anchor.Y - formatted.Height / 2));
-    }
-
-    private static string Format(FormattableString text) => text.ToString(CultureInfo.CurrentCulture);
 }

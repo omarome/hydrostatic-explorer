@@ -63,8 +63,9 @@ Any of them can change it, and the other two follow.
   previous page at the page edge. **PageUp/PageDown** change page.
 - **Chart**: displacement against draft. **Click or drag** on it to select the nearest draft. If that row
   is on another page, the table jumps to it.
-- **Hull side view**: the side profile at its true proportions, with the waterline (WL) at the selected
-  draft and the submerged part shaded. Drag the **Draft** slider under it to scrub through drafts.
+- **Hull view**: two tabs. **Side** shows the side profile at its true proportions, with the waterline (WL) at
+  the selected draft and the submerged part shaded. **Isometric** shows the hull box (L × B × D) in pseudo-3D
+  with the waterplane at the selected draft. Drag the **Draft** slider under either one to scrub through drafts.
 - **Status bar**: green when the API answered the last request, red (with the reason) when it didn't, plus the
   time and duration of the last successful load.
 
