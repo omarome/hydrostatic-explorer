@@ -111,48 +111,48 @@ public sealed class HullProfileView : Control
         var thinPen = new Pen(foreground, 1);
         var dashedPen = new Pen(foreground, 1, new DashStyle(new double[] { 4, 3 }, 0));
         Rect hull = layout.Hull;
+        double? draft = Draft;
+        double? waterlineY = draft is null ? null : layout.WaterlineY(draft.Value);
 
         // 1. Water: a light band across the whole width, darker where it fills the hull.
-        if (Draft is double draft)
+        if (waterlineY is double seaTop)
         {
-            double waterlineY = layout.WaterlineY(draft);
             double seaBottom = Math.Min(hull.Bottom + 12, Bounds.Height);
-            context.FillRectangle(SeaBrush, new Rect(0, waterlineY, Bounds.Width, seaBottom - waterlineY));
-            context.FillRectangle(SubmergedBrush, new Rect(hull.Left, waterlineY, hull.Width, hull.Bottom - waterlineY));
+            context.FillRectangle(SeaBrush, new Rect(0, seaTop, Bounds.Width, seaBottom - seaTop));
+            context.FillRectangle(SubmergedBrush, new Rect(hull.Left, seaTop, hull.Width, hull.Bottom - seaTop));
         }
 
         // 2. Hull outline.
         context.DrawRectangle(null, outlinePen, hull);
 
-        // 3. Keel baseline (BL), extended past both ends.
+        // 3. Keel baseline (BL), extended past both ends. "BL" sits just below its line and "WL" just
+        //    above its line, so the two labels never overlap at shallow drafts.
         double keelY = layout.KeelY;
         context.DrawLine(dashedPen, new Point(hull.Left - LineOverhang, keelY), new Point(hull.Right + LineOverhang, keelY));
-        // "BL" sits just below its line and "WL" just above its line, so they never overlap at shallow drafts.
         DrawLabel(context, "BL", new Point(hull.Right + LineOverhang + 4, keelY + LabelOffset), foreground, HorizontalAlignment.Left);
 
         // 4. Waterline (WL).
-        if (Draft is double t)
+        if (waterlineY is double wl)
         {
-            double waterlineY = layout.WaterlineY(t);
-            context.DrawLine(WaterlinePen, new Point(hull.Left - LineOverhang, waterlineY), new Point(hull.Right + LineOverhang, waterlineY));
-            DrawLabel(context, "WL", new Point(hull.Right + LineOverhang + 4, waterlineY - LabelOffset), foreground, HorizontalAlignment.Left);
+            context.DrawLine(WaterlinePen, new Point(hull.Left - LineOverhang, wl), new Point(hull.Right + LineOverhang, wl));
+            DrawLabel(context, "WL", new Point(hull.Right + LineOverhang + 4, wl - LabelOffset), foreground, HorizontalAlignment.Left);
         }
 
-        // Caption above the hull: the current draft, or a hint. Above the deck it can't collide with the
-        // drawing, even when the hull is only a few pixels tall.
-        string caption = Draft is double draftValue
-            ? Format($"Waterline at T = {draftValue:F2} m")
-            : "Select a row to show the waterline";
+        // 5. Caption above the hull: the current draft, or a hint. Above the deck it can't collide with
+        //    the drawing, even when the hull is only a few pixels tall.
+        string caption = draft is null
+            ? "Select a draft to show the waterline"
+            : Format($"Waterline at T = {draft:F2} m");
         DrawLabel(context, caption, new Point(hull.Center.X, Math.Max(hull.Top - 14, 8)), foreground, HorizontalAlignment.Center);
 
-        // 5. Length dimension below the hull: |<—— L = 120 m ——>|
+        // 6. Length dimension below the hull: |<—— L = 120 m ——>|
         double dimY = hull.Bottom + 28;
         context.DrawLine(thinPen, new Point(hull.Left, dimY), new Point(hull.Right, dimY));
         DrawTick(context, thinPen, new Point(hull.Left, dimY), vertical: true);
         DrawTick(context, thinPen, new Point(hull.Right, dimY), vertical: true);
         DrawLabel(context, Format($"L = {Length:0.##} m"), new Point(hull.Center.X, dimY + 12), foreground, HorizontalAlignment.Center);
 
-        // 6. Depth dimension left of the hull.
+        // 7. Depth dimension left of the hull.
         double dimX = hull.Left - 28;
         context.DrawLine(thinPen, new Point(dimX, hull.Top), new Point(dimX, hull.Bottom));
         DrawTick(context, thinPen, new Point(dimX, hull.Top), vertical: false);

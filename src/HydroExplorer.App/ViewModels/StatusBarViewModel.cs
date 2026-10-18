@@ -17,11 +17,9 @@ public class StatusBarViewModel : ViewModelBase
 
     public string ApiAddress { get; }
 
-    public ApiConnectionState State => _status.State;
+    public bool IsConnected => _status.State == ApiConnectionState.Connected;
 
-    public bool IsConnected => State == ApiConnectionState.Connected;
-
-    public bool IsDisconnected => State == ApiConnectionState.Disconnected;
+    public bool IsDisconnected => _status.State == ApiConnectionState.Disconnected;
 
     /// <summary>For example "Connected to http://localhost:5080/".</summary>
     public string ConnectionText => _status.State switch
@@ -39,7 +37,6 @@ public class StatusBarViewModel : ViewModelBase
     private void OnStatusChanged(object? sender, PropertyChangedEventArgs e)
     {
         // These properties are computed from ApiStatus, so when it changes, all of them may have changed.
-        OnPropertyChanged(nameof(State));
         OnPropertyChanged(nameof(IsConnected));
         OnPropertyChanged(nameof(IsDisconnected));
         OnPropertyChanged(nameof(ConnectionText));
