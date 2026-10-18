@@ -1,0 +1,15 @@
+<!--
+  Settings shared by every project in the solution (MSBuild picks this file up automatically).
+  Similar idea to a root tsconfig.json that every package extends.
+-->
+<Project>
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <!-- Nullable reference types: the compiler warns when something that may be null is used unchecked. -->
+    <Nullable>enable</Nullable>
+    <!-- Implicit usings: common namespaces (System, System.Linq, ...) are imported in every file. -->
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+</Project>

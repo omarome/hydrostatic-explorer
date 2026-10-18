@@ -1,0 +1,64 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{E930818E-7485-4E7F-9C83-8E2DBE7A0153}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HydroExplorer.Api", "src\HydroExplorer.Api\HydroExplorer.Api.csproj", "{6F78BF1A-E124-49EB-BFB9-7A2B025448C3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HydroExplorer.App", "src\HydroExplorer.App\HydroExplorer.App.csproj", "{BA531255-C242-4B02-9FCF-D0AD997340BB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HydroExplorer.Core", "src\HydroExplorer.Core\HydroExplorer.Core.csproj", "{8994F654-31A1-46D0-BE32-CEE3648191A1}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{6DB3B58F-87D2-451D-B4AD-E0F38FDBE57D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HydroExplorer.Api.Tests", "tests\HydroExplorer.Api.Tests\HydroExplorer.Api.Tests.csproj", "{B734630C-31D5-4507-81CB-28442B0C5288}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HydroExplorer.App.Tests", "tests\HydroExplorer.App.Tests\HydroExplorer.App.Tests.csproj", "{ACE47925-6BF0-4AB7-AB61-7D154795AA8E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HydroExplorer.Core.Tests", "tests\HydroExplorer.Core.Tests\HydroExplorer.Core.Tests.csproj", "{DB43BBF2-FBB2-44D0-97E7-42D4DC4D75F0}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{6F78BF1A-E124-49EB-BFB9-7A2B025448C3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6F78BF1A-E124-49EB-BFB9-7A2B025448C3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6F78BF1A-E124-49EB-BFB9-7A2B025448C3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6F78BF1A-E124-49EB-BFB9-7A2B025448C3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BA531255-C242-4B02-9FCF-D0AD997340BB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BA531255-C242-4B02-9FCF-D0AD997340BB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BA531255-C242-4B02-9FCF-D0AD997340BB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BA531255-C242-4B02-9FCF-D0AD997340BB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8994F654-31A1-46D0-BE32-CEE3648191A1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8994F654-31A1-46D0-BE32-CEE3648191A1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8994F654-31A1-46D0-BE32-CEE3648191A1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8994F654-31A1-46D0-BE32-CEE3648191A1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B734630C-31D5-4507-81CB-28442B0C5288}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B734630C-31D5-4507-81CB-28442B0C5288}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B734630C-31D5-4507-81CB-28442B0C5288}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B734630C-31D5-4507-81CB-28442B0C5288}.Release|Any CPU.Build.0 = Release|Any CPU
+		{ACE47925-6BF0-4AB7-AB61-7D154795AA8E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ACE47925-6BF0-4AB7-AB61-7D154795AA8E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ACE47925-6BF0-4AB7-AB61-7D154795AA8E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ACE47925-6BF0-4AB7-AB61-7D154795AA8E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DB43BBF2-FBB2-44D0-97E7-42D4DC4D75F0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DB43BBF2-FBB2-44D0-97E7-42D4DC4D75F0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DB43BBF2-FBB2-44D0-97E7-42D4DC4D75F0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DB43BBF2-FBB2-44D0-97E7-42D4DC4D75F0}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{6F78BF1A-E124-49EB-BFB9-7A2B025448C3} = {E930818E-7485-4E7F-9C83-8E2DBE7A0153}
+		{BA531255-C242-4B02-9FCF-D0AD997340BB} = {E930818E-7485-4E7F-9C83-8E2DBE7A0153}
+		{8994F654-31A1-46D0-BE32-CEE3648191A1} = {E930818E-7485-4E7F-9C83-8E2DBE7A0153}
+		{B734630C-31D5-4507-81CB-28442B0C5288} = {6DB3B58F-87D2-451D-B4AD-E0F38FDBE57D}
+		{ACE47925-6BF0-4AB7-AB61-7D154795AA8E} = {6DB3B58F-87D2-451D-B4AD-E0F38FDBE57D}
+		{DB43BBF2-FBB2-44D0-97E7-42D4DC4D75F0} = {6DB3B58F-87D2-451D-B4AD-E0F38FDBE57D}
+	EndGlobalSection
+EndGlobal

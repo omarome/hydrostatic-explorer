@@ -1,0 +1,16 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:HydroExplorer.App.ViewModels"
+        x:Class="HydroExplorer.App.Views.MainWindow"
+        x:DataType="vm:MainViewModel"
+        Icon="/Assets/avalonia-logo.ico"
+        Width="1200" Height="760"
+        Title="{Binding Title}">
+    <!-- x:DataType tells the compiler which ViewModel this view binds to, so {Binding Title}
+         is checked at build time. WPF note: WPF only has d:DataContext for designer hints. -->
+
+    <TextBlock Text="{Binding Title}"
+               FontSize="24"
+               HorizontalAlignment="Center"
+               VerticalAlignment="Center" />
+</Window>
