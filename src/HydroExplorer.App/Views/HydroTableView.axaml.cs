@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Windows.Input;  // ICommand lives here in all of .NET (a WPF-era name), and Avalonia uses it too
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
@@ -54,7 +55,7 @@ public partial class HydroTableView : UserControl
         }
     }
 
-    private static void ExecuteIfEnabled(System.Windows.Input.ICommand command)
+    private static void ExecuteIfEnabled(ICommand command)
     {
         if (command.CanExecute(null))
         {

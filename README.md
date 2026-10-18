@@ -7,11 +7,16 @@ A small desktop demo app: hydrostatic data for a box-shaped hull, shown in three
 - **HydroExplorer.Api**: ASP.NET Core minimal API serving hulls and hydrostatic tables
 - **HydroExplorer.App**: Avalonia 11 MVVM desktop app (runs on macOS, Windows, Linux)
 
-See `DECISIONS.md` for design choices and why each was made.
+Further reading:
+
+- [ARCHITECTURE.md](ARCHITECTURE.md): projects, data flow, how the selection is shared, React → Avalonia/WPF concept map
+- [DECISIONS.md](DECISIONS.md): every design choice and why, phase by phase
 
 ## Prerequisites
 
-- .NET 8 SDK (`dotnet --list-sdks` should show `8.0.x`). `global.json` pins the solution to SDK 8.0.x.
+- .NET 8 SDK (`dotnet --list-sdks` should show `8.0.x`). `global.json` pins the solution to SDK 8.0.x
+  (any 8.0 feature band). Install it from https://dotnet.microsoft.com/download/dotnet/8.0, or without admin rights:
+  `curl -sSL https://dot.net/v1/dotnet-install.sh | bash -s -- --channel 8.0`, then add `~/.dotnet` to `PATH`.
 - macOS, Windows or Linux. Developed on macOS (Apple Silicon).
 - Optional: VS Code with the C# Dev Kit extension.
 
@@ -146,14 +151,14 @@ curl -i "http://localhost:5080/api/hulls/99/hydrostatics"
 
 ```
 HydroExplorer.sln
-Directory.Build.props        # settings shared by all projects (net8.0, nullable, warnings as errors)
-global.json                  # pins the .NET SDK version
+Directory.Build.props          # settings shared by all projects (net8.0, nullable, warnings as errors)
+global.json                    # pins the .NET SDK version
 src/
-  HydroExplorer.Core/
-  HydroExplorer.Api/
-  HydroExplorer.App/
+  HydroExplorer.Core/          # Models/, Hydrostatics/ (formulas, table, curve), Paging/, Data/ (seed hulls)
+  HydroExplorer.Api/           # Program.cs, Endpoints/, Queries/ (validation, filter/sort/page), Infrastructure/ (latency)
+  HydroExplorer.App/           # Services/ (API client, selection, status), ViewModels/, Views/, Controls/ (hull drawing)
 tests/
-  HydroExplorer.Core.Tests/  # xUnit: formulas, row generation, paging
-  HydroExplorer.Api.Tests/   # xUnit + WebApplicationFactory: endpoints
-  HydroExplorer.App.Tests/   # xUnit: ViewModels with a fake API client
+  HydroExplorer.Core.Tests/    # formulas, table generation, snapping, interpolation, paging
+  HydroExplorer.Api.Tests/     # WebApplicationFactory: endpoints, paging, sorting, filtering, page-of, 400/404
+  HydroExplorer.App.Tests/     # ViewModels with a fake API client, HTTP client with a stub handler, layout math
 ```
