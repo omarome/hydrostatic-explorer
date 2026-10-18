@@ -206,3 +206,37 @@ as the table).
 button bound to `LoadCurveCommand`, separate from the table's banner. Each panel recovers on its own.
 
 **Short animations.** `AnimationsSpeed` is 150 ms, so the marker moves "immediately" but visibly.
+
+## Phase 5: hull side view
+
+**A custom `Control` that overrides `Render`, not a Canvas of shapes.** `HullProfileView` draws with
+`DrawingContext` (rectangles, lines, text). One class owns the whole drawing, and nothing needs creating or
+positioning as child elements. `AffectsRender` in the static constructor lists the properties that trigger a
+redraw (Length, Depth, Draft, Foreground). A resize triggers one automatically, because `Render` reads
+`Bounds.Size` each time.
+
+**The layout math is separate from the drawing.** `HullProfileLayout.Create(size, L, D)` computes one uniform
+scale (pixels per metre) as `min(freeWidth / L, freeHeight / D)`, centres the hull, and converts a draft to a
+screen y. It is pure math, so tests check fit, margins, centring, aspect ratio at several sizes, and waterline
+position without rendering anything. The control just draws the rectangles it is given.
+
+**True aspect ratio, so the hulls look thin.** All three sample hulls are about 10:1 (length to depth), so the
+side view is a long, shallow strip. That is correct for a barge, and the brief asks for the correct aspect ratio.
+Exaggerating the vertical scale is common in naval-architecture plots, but it would need explaining in a demo.
+
+**Theme-aware drawing.** The control adds itself as an owner of `TextElement.ForegroundProperty`, so it
+inherits the theme's text colour. Outline, dimension lines and labels use it and work in light and dark mode.
+Water uses fixed translucent blues that read well on both backgrounds.
+
+**Label placement.** The draft caption sits above the hull, never inside it: the hull can be only a few pixels
+tall. "WL" sits just above its line and "BL" just below its line, so at shallow drafts they don't overlap (the
+first version did).
+
+**`HullViewModel` has no API calls.** It copies the hull's L and D and the selected row's draft from
+`SelectionService`. `Draft` is `double?`, and null means "no row selected": no waterline, a hint instead.
+
+**Checking the rendering headlessly.** During development the real MainWindow was rendered to PNG with
+`Avalonia.Headless` (Skia) against the running API, to check the drawing at several sizes and in the dark theme.
+That was a throwaway scratch tool, not part of the repo. One finding: LiveCharts redraws on its own throttled
+timer, so a capture taken immediately after a selection can show the chart mid-update. That is a capture artifact,
+not an app bug.

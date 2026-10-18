@@ -54,6 +54,9 @@ Start the API and click Retry.
 - **Selection**: click a row. The chart marks that draft with an orange dot and a dashed line, and shows its
   values above the chart. The selection stays marked while you page through the table.
 - **Chart**: displacement against draft for the selected hull, loaded once per hull from `/curve`.
+- **Hull side view**: the hull's side profile (L × D) at its true proportions, with the keel baseline (BL). Selecting a
+  row draws the waterline (WL) at that draft, with the submerged part shaded. It re-fits when you resize the window
+  or drag the splitters.
 
 ## API reference
 

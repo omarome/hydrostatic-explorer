@@ -60,6 +60,7 @@ public partial class App : Application
         services.AddSingleton<SelectionService>();  // the one shared selection every ViewModel receives
         services.AddSingleton<HydroTableViewModel>();
         services.AddSingleton<HydroChartViewModel>();
+        services.AddSingleton<HullViewModel>();
         services.AddSingleton<MainViewModel>();
 
         return services.BuildServiceProvider();
