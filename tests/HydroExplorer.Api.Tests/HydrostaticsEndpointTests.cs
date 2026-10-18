@@ -200,6 +200,63 @@ public class HydrostaticsEndpointTests : IClassFixture<ApiFactory>
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
+    // ---- Page of draft ----
+
+    [Fact]
+    public async Task GetPageOf_ReturnsThePageContainingTheDraft()
+    {
+        // Ascending: 3.25 m is row index 315 → page 315 / 25 + 1 = 13.
+        PagedResult<HydrostaticRow> result = await GetPage($"{LargePontoon}/page-of?draft=3.25&pageSize=25");
+
+        Assert.Equal(13, result.Page);
+        Assert.Contains(result.Items, row => row.Draft == 3.25);
+    }
+
+    [Fact]
+    public async Task GetPageOf_RespectsSortOrder()
+    {
+        // Descending: 3.25 m is index 1190 − 315 = 875 → page 875 / 25 + 1 = 36.
+        PagedResult<HydrostaticRow> result = await GetPage($"{LargePontoon}/page-of?draft=3.25&sortDir=desc");
+
+        Assert.Equal(36, result.Page);
+        Assert.Contains(result.Items, row => row.Draft == 3.25);
+    }
+
+    [Theory]
+    [InlineData("3.2547", 3.25, 13)]  // snapped to the nearest centimetre
+    [InlineData("0", 0.10, 1)]        // below the table: first row
+    [InlineData("99", 12.00, 48)]     // beyond the depth: last row
+    public async Task GetPageOf_SnapsToNearestTableRow(string draft, double expectedRowDraft, int expectedPage)
+    {
+        PagedResult<HydrostaticRow> result = await GetPage($"{LargePontoon}/page-of?draft={draft}");
+
+        Assert.Equal(expectedPage, result.Page);
+        Assert.Contains(result.Items, row => row.Draft == expectedRowDraft);
+    }
+
+    [Theory]
+    [InlineData("", "draft")]
+    [InlineData("draft=-1", "draft")]
+    [InlineData("draft=NaN", "draft")]
+    [InlineData("draft=3&pageSize=500", "pageSize")]
+    [InlineData("draft=3&sortBy=volume", "sortBy")]
+    public async Task GetPageOf_InvalidParameter_Returns400(string queryString, string invalidParameter)
+    {
+        HttpResponseMessage response = await _client.GetAsync($"{LargePontoon}/page-of?{queryString}");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var problem = await response.Content.ReadFromJsonAsync<HttpValidationProblemDetails>();
+        Assert.Contains(invalidParameter, problem!.Errors.Keys);
+    }
+
+    [Fact]
+    public async Task GetPageOf_UnknownHull_Returns404()
+    {
+        HttpResponseMessage response = await _client.GetAsync("/api/hulls/99/hydrostatics/page-of?draft=1");
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
     // ---- Swagger ----
 
     [Fact]

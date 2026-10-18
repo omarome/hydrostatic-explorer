@@ -41,6 +41,30 @@ public static class HydrostaticTableGenerator
     }
 
     /// <summary>
+    /// The table draft nearest to <paramref name="draft"/>: rounded to whole centimetres and kept within
+    /// [<see cref="MinDraft"/>, hull depth]. Lets a chart click or slider position (e.g. 3.2547 m) pick
+    /// a row that exists (3.25 m). The result is bit-for-bit equal to that row's <see cref="HydrostaticRow.Draft"/>.
+    /// </summary>
+    public static double SnapToTableDraft(Hull hull, double draft)
+    {
+        HydrostaticsCalculator.ValidateHull(hull);
+        if (!double.IsFinite(draft))
+        {
+            throw new ArgumentOutOfRangeException(nameof(draft), draft, "Draft must be a finite number.");
+        }
+
+        // Clamp in metres first, so huge values can't overflow the int conversion.
+        double clamped = Math.Clamp(draft, MinDraft, hull.Depth);
+        int cm = Math.Clamp(
+            (int)Math.Round(clamped * CentimetresPerMetre),
+            ToWholeCentimetres(MinDraft),
+            ToWholeCentimetres(hull.Depth));
+
+        // Same expression as in Generate, so the double is identical to the row's draft.
+        return Math.Round((double)cm / CentimetresPerMetre, 2);
+    }
+
+    /// <summary>
     /// Converts metres to whole centimetres, rounding down. The tiny epsilon stops a value
     /// like 4.0 stored as 3.9999999999 from losing a centimetre.
     /// </summary>

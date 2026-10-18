@@ -1,6 +1,5 @@
 using HydroExplorer.App.Services;
 using HydroExplorer.App.ViewModels;
-using HydroExplorer.Core.Hydrostatics;
 using HydroExplorer.Core.Models;
 
 namespace HydroExplorer.App.Tests;
@@ -41,20 +40,45 @@ public class HullViewModelTests
     {
         _selection.SelectedHull = CoastalBarge;
 
-        _selection.SelectedRow = HydrostaticsCalculator.Calculate(CoastalBarge, 3.25);
+        _selection.SelectDraft(3.25);
 
         Assert.Equal(3.25, _vm.Draft);
+        Assert.Equal(3.25, _vm.SliderDraft);
     }
 
     [Fact]
     public void ChangingHull_RemovesTheWaterline()
     {
         _selection.SelectedHull = CoastalBarge;
-        _selection.SelectedRow = HydrostaticsCalculator.Calculate(CoastalBarge, 3.25);
+        _selection.SelectDraft(3.25);
 
         _selection.SelectedHull = new Hull(1, "Small Barge", 40, 10, 4);
 
         Assert.Equal(40, _vm.Length);
         Assert.Null(_vm.Draft);
+    }
+
+    [Fact]
+    public void MovingTheSlider_SnapsToWholeCentimetres_WithinTheHull()
+    {
+        _selection.SelectedHull = CoastalBarge;
+
+        _vm.SliderDraft = 3.2547;
+        Assert.Equal(3.25, _selection.SelectedDraft);
+
+        _vm.SliderDraft = 50;
+        Assert.Equal(7.0, _selection.SelectedDraft);
+    }
+
+    [Fact]
+    public void ChangingHull_DoesNotSelectADraft_EvenThoughTheSliderResets()
+    {
+        _selection.SelectedHull = CoastalBarge;
+        _selection.SelectDraft(5);
+
+        _selection.SelectedHull = new Hull(1, "Small Barge", 40, 10, 4);
+
+        Assert.Null(_selection.SelectedDraft);
+        Assert.Equal("T = –", _vm.DraftLabel);
     }
 }

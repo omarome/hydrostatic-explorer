@@ -34,74 +34,64 @@
                   GridLinesVisibility="Horizontal"
                   Sorting="OnGridSorting">
             <!-- Each column binds to a property of one HydrostaticRow, hence x:DataType on the column.
+                 Star widths share the table's width between the columns (like flex-grow in CSS;
+                 "1.2*" gets 1.2 shares), weighted by how wide the numbers are.
+                 MinWidth makes the grid scroll sideways instead of squashing numbers when it's narrow.
+                 Headers put the unit on a second line ("&#x0a;" is a newline in XAML).
                  CanUserSort / SortMemberPath mark the three columns the API can sort by.
                  StringFormat: F2 = fixed 2 decimals, N1 = thousands separator + 1 decimal. -->
             <DataGrid.Columns>
-                <DataGridTextColumn x:DataType="models:HydrostaticRow" Header="T (m)"
+                <DataGridTextColumn x:DataType="models:HydrostaticRow" Width="0.8*" MinWidth="72" Header="T&#x0a;(m)"
                                     Binding="{Binding Draft, StringFormat={}{0:F2}}"
                                     SortMemberPath="draft" CanUserSort="True" CellStyleClasses="number" />
-                <DataGridTextColumn x:DataType="models:HydrostaticRow" Header="∇ (m³)"
+                <DataGridTextColumn x:DataType="models:HydrostaticRow" Width="1.15*" MinWidth="72" Header="∇&#x0a;(m³)"
                                     Binding="{Binding Volume, StringFormat={}{0:N1}}"
                                     CanUserSort="False" CellStyleClasses="number" />
-                <DataGridTextColumn x:DataType="models:HydrostaticRow" Header="Δ (t)"
+                <DataGridTextColumn x:DataType="models:HydrostaticRow" Width="1.15*" MinWidth="72" Header="Δ&#x0a;(t)"
                                     Binding="{Binding Displacement, StringFormat={}{0:N1}}"
                                     SortMemberPath="displacement" CanUserSort="True" CellStyleClasses="number" />
-                <DataGridTextColumn x:DataType="models:HydrostaticRow" Header="Awp (m²)"
+                <DataGridTextColumn x:DataType="models:HydrostaticRow" Width="0.9*" MinWidth="72" Header="Awp&#x0a;(m²)"
                                     Binding="{Binding WaterplaneArea, StringFormat={}{0:N0}}"
                                     CanUserSort="False" CellStyleClasses="number" />
-                <DataGridTextColumn x:DataType="models:HydrostaticRow" Header="TPC (t/cm)"
+                <DataGridTextColumn x:DataType="models:HydrostaticRow" Width="0.9*" MinWidth="72" Header="TPC&#x0a;(t/cm)"
                                     Binding="{Binding Tpc, StringFormat={}{0:F2}}"
                                     CanUserSort="False" CellStyleClasses="number" />
-                <DataGridTextColumn x:DataType="models:HydrostaticRow" Header="KB (m)"
+                <DataGridTextColumn x:DataType="models:HydrostaticRow" Width="0.9*" MinWidth="72" Header="KB&#x0a;(m)"
                                     Binding="{Binding Kb, StringFormat={}{0:F3}}"
                                     CanUserSort="False" CellStyleClasses="number" />
-                <DataGridTextColumn x:DataType="models:HydrostaticRow" Header="BM (m)"
+                <DataGridTextColumn x:DataType="models:HydrostaticRow" Width="*" MinWidth="72" Header="BM&#x0a;(m)"
                                     Binding="{Binding Bm, StringFormat={}{0:F3}}"
                                     CanUserSort="False" CellStyleClasses="number" />
-                <DataGridTextColumn x:DataType="models:HydrostaticRow" Header="KM (m)"
+                <DataGridTextColumn x:DataType="models:HydrostaticRow" Width="*" MinWidth="72" Header="KM&#x0a;(m)"
                                     Binding="{Binding Km, StringFormat={}{0:F3}}"
                                     SortMemberPath="km" CanUserSort="True" CellStyleClasses="number" />
-                <DataGridTextColumn x:DataType="models:HydrostaticRow" Header="BML (m)"
+                <DataGridTextColumn x:DataType="models:HydrostaticRow" Width="*" MinWidth="72" Header="BML&#x0a;(m)"
                                     Binding="{Binding Bml, StringFormat={}{0:N1}}"
                                     CanUserSort="False" CellStyleClasses="number" />
-                <DataGridTextColumn x:DataType="models:HydrostaticRow" Header="MCT (t·m/cm)"
+                <DataGridTextColumn x:DataType="models:HydrostaticRow" Width="1.2*" MinWidth="72" Header="MCT&#x0a;(t·m/cm)"
                                     Binding="{Binding Mct, StringFormat={}{0:F1}}"
                                     CanUserSort="False" CellStyleClasses="number" />
             </DataGrid.Columns>
         </DataGrid>
 
-        <!-- Paging bar -->
-        <DockPanel Grid.Row="3" Margin="0,8,0,0" LastChildFill="False">
-            <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" Spacing="4">
+        <!-- Paging bar. A WrapPanel moves the page-size group onto a second line when the table is narrow. -->
+        <WrapPanel Grid.Row="3" Margin="0,8,0,0">
+            <StackPanel Orientation="Horizontal" Spacing="4" Margin="0,0,24,4">
                 <Button Content="⏮" ToolTip.Tip="First page" Command="{Binding FirstPageCommand}" />
                 <Button Content="◀" ToolTip.Tip="Previous page" Command="{Binding PreviousPageCommand}" />
-                <TextBlock Text="{Binding PageSummary}" VerticalAlignment="Center" Margin="8,0" MinWidth="200"
+                <TextBlock Text="{Binding PageSummary}" VerticalAlignment="Center" Margin="8,0" MinWidth="190"
                            TextAlignment="Center" />
                 <Button Content="▶" ToolTip.Tip="Next page" Command="{Binding NextPageCommand}" />
                 <Button Content="⏭" ToolTip.Tip="Last page" Command="{Binding LastPageCommand}" />
                 <Button Content="⟳" ToolTip.Tip="Refresh" Command="{Binding RefreshCommand}" Margin="8,0,0,0" />
             </StackPanel>
-            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="8">
+            <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,0,4">
                 <TextBlock Text="Rows per page" VerticalAlignment="Center" />
                 <!-- x:Static reads a static property (here the 25/50/100 list) instead of the DataContext. -->
                 <ComboBox ItemsSource="{x:Static vm:HydroTableViewModel.PageSizeOptions}"
                           SelectedItem="{Binding PageSize}" />
             </StackPanel>
-        </DockPanel>
+        </WrapPanel>
     </Grid>
 
-    <UserControl.Styles>
-        <Style Selector="Border.error">
-            <Setter Property="Background" Value="#33E53935" />
-            <Setter Property="BorderBrush" Value="#E53935" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="CornerRadius" Value="4" />
-            <Setter Property="Padding" Value="12,8" />
-            <Setter Property="Margin" Value="0,0,0,8" />
-        </Style>
-        <!-- Right-align numeric cells. -->
-        <Style Selector="DataGridCell.number">
-            <Setter Property="HorizontalContentAlignment" Value="Right" />
-        </Style>
-    </UserControl.Styles>
 </UserControl>

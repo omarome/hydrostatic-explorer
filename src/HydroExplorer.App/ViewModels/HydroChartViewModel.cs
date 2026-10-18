@@ -2,6 +2,7 @@ using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using HydroExplorer.App.Services;
+using HydroExplorer.Core.Hydrostatics;
 using HydroExplorer.Core.Models;
 using LiveChartsCore;
 using LiveChartsCore.Defaults;
@@ -14,7 +15,7 @@ namespace HydroExplorer.App.ViewModels;
 
 /// <summary>
 /// The displacement-vs-draft chart. It follows the shared selection: a new hull reloads the curve
-/// from the API, and a new row only moves the marker (no request).
+/// from the API, and a new draft only moves the marker (no request). Clicking the chart selects a draft.
 /// </summary>
 /// <remarks>
 /// The plain data (<see cref="Curve"/>, <see cref="Marker"/>) is what tests check. The LiveCharts
@@ -98,7 +99,7 @@ public partial class HydroChartViewModel : ViewModelBase
 
     /// <summary>For example "T = 3.25 m   Δ = 11,070.0 t".</summary>
     public string MarkerLabel => Marker is null
-        ? "Select a row to mark its draft"
+        ? "Click the chart or a row to select a draft"
         : $"T = {Marker.Draft:F2} m   Δ = {Marker.Displacement:N1} t";
 
     // ---- LiveCharts objects (bound by CartesianChart in HydroChartView.axaml) ----
@@ -168,17 +169,36 @@ public partial class HydroChartViewModel : ViewModelBase
                 _ = LoadCurveAsync();  // fire and forget: LoadCurveAsync handles its own errors
                 break;
 
-            case nameof(SelectionService.SelectedRow):
-                HydrostaticRow? row = _selection.SelectedRow;
-                Marker = row is null ? null : new CurvePoint(row.Draft, row.Displacement);
+            case nameof(SelectionService.SelectedDraft):
+                UpdateMarker();
                 break;
         }
     }
 
+    /// <summary>
+    /// Called when the user clicks or drags on the chart at <paramref name="draft"/> (chart x-coordinate).
+    /// The shared selection snaps it to the nearest table draft; the table then shows that row.
+    /// </summary>
+    public void SelectDraftAt(double draft) => _selection.SelectDraft(draft);
+
+    /// <summary>
+    /// Places the marker at the selected draft. Displacement is read off the loaded curve, so the marker
+    /// moves instantly without waiting for the table to fetch the row.
+    /// </summary>
+    private void UpdateMarker()
+    {
+        double? draft = _selection.SelectedDraft;
+        double? displacement = draft is null ? null : CurveInterpolator.InterpolateDisplacement(Curve, draft.Value);
+        Marker = draft is null || displacement is null ? null : new CurvePoint(draft.Value, displacement.Value);
+    }
+
     // ---- Keeping the LiveCharts objects in step with the plain state ----
 
-    partial void OnCurveChanged(IReadOnlyList<CurvePoint> value) =>
+    partial void OnCurveChanged(IReadOnlyList<CurvePoint> value)
+    {
         _curveSeries.Values = value.Select(point => new ObservablePoint(point.Draft, point.Displacement)).ToArray();
+        UpdateMarker();  // the marker's displacement is read off the curve
+    }
 
     partial void OnMarkerChanged(CurvePoint? value)
     {

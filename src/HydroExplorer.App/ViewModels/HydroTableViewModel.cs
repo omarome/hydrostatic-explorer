@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using HydroExplorer.App.Services;
@@ -39,6 +40,7 @@ public partial class HydroTableViewModel : ViewModelBase
     {
         _api = api;
         _selection = selection;
+        _selection.PropertyChanged += OnSelectionChanged;  // app-lifetime singletons: no unsubscribe needed
     }
 
     [ObservableProperty]
@@ -50,6 +52,7 @@ public partial class HydroTableViewModel : ViewModelBase
     [ObservableProperty]
     private IReadOnlyList<HydrostaticRow> _rows = Array.Empty<HydrostaticRow>();
 
+    /// <summary>The highlighted row: the shared selected draft, if it is on the current page.</summary>
     [ObservableProperty]
     private HydrostaticRow? _selectedRow;
 
@@ -119,12 +122,28 @@ public partial class HydroTableViewModel : ViewModelBase
         SelectedHull = hulls.FirstOrDefault();  // triggers OnSelectedHullChanged → loads page 1
     }
 
+    /// <summary>Loads page <paramref name="page"/> for the selected hull. Never throws.</summary>
+    public Task LoadPageAsync(int page) =>
+        LoadAsync((hullId, cancellationToken) =>
+            _api.GetHydrostaticsAsync(hullId, CurrentRequest(page), cancellationToken));
+
+    /// <summary>Loads whichever page contains <paramref name="draft"/> (in the current sort order). Never throws.</summary>
+    public Task LoadPageContainingDraftAsync(double draft) =>
+        LoadAsync((hullId, cancellationToken) =>
+            _api.GetPageContainingDraftAsync(hullId, draft, CurrentRequest(page: 1), cancellationToken));
+
+    private HydrostaticsPageRequest CurrentRequest(int page) => new(page, PageSize, SortBy, SortDescending);
+
     /// <summary>
-    /// Loads <paramref name="page"/> for the selected hull. Page state (rows, page number, totals)
-    /// only changes when the request succeeds, so a failure leaves the previous page visible.
-    /// Never throws: API errors go to <see cref="ErrorMessage"/>.
+    /// Runs one page request and applies the result. <paramref name="fetch"/> is the request to make,
+    /// passed in as a function (like passing a callback in JavaScript), so both kinds of page load share
+    /// the loading, cancellation and error handling below.
     /// </summary>
-    public async Task LoadPageAsync(int page)
+    /// <remarks>
+    /// Page state (rows, page number, totals) only changes when the request succeeds, so a failure leaves
+    /// the previous page visible. API errors go to <see cref="ErrorMessage"/>; this method never throws.
+    /// </remarks>
+    private async Task LoadAsync(Func<int, CancellationToken, Task<PagedResult<HydrostaticRow>>> fetch)
     {
         if (SelectedHull is not { } hull)
         {
@@ -139,8 +158,7 @@ public partial class HydroTableViewModel : ViewModelBase
         ErrorMessage = null;
         try
         {
-            var request = new HydrostaticsPageRequest(page, PageSize, SortBy, SortDescending);
-            PagedResult<HydrostaticRow> result = await _api.GetHydrostaticsAsync(hull.Id, request, cancellation.Token);
+            PagedResult<HydrostaticRow> result = await fetch(hull.Id, cancellation.Token);
 
             // "await" resumes here later. If a newer request started meanwhile, this result is stale.
             if (cancellation.IsCancellationRequested)
@@ -149,14 +167,12 @@ public partial class HydroTableViewModel : ViewModelBase
             }
 
             Rows = result.Items;
-
-            // If the shared selection is on this page (e.g. after paging away and back), highlight it again.
-            // Records compare by value, so a row from a fresh response equals the previously selected one.
-            SelectedRow = Rows.FirstOrDefault(row => row == _selection.SelectedRow);
-
             CurrentPage = result.Page;
             TotalPages = result.TotalPages;
             TotalCount = result.TotalCount;
+
+            // Highlight the shared selection if it is on this page (e.g. after paging away and back).
+            SelectedRow = FindRow(_selection.SelectedDraft);
         }
         catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
         {
@@ -179,29 +195,107 @@ public partial class HydroTableViewModel : ViewModelBase
         }
     }
 
+    // ---- Linking with the shared selection ----
+
     // Generated partial-method hooks. "_ = SomeAsync()" starts the load without awaiting it
-    // ("fire and forget"). That's safe here because LoadPageAsync catches its own errors.
+    // ("fire and forget"). That's safe here because the load methods catch their own errors.
 
     partial void OnSelectedHullChanged(Hull? value)
     {
-        _selection.SelectedHull = value;  // also clears the shared row selection
+        _selection.SelectedHull = value;  // also clears the shared draft
         _ = LoadPageAsync(1);
     }
 
     /// <summary>
     /// Publishes the row the user clicked to the shared selection. A null row is ignored: the DataGrid
     /// clears its selection whenever the page changes, but the selected draft should stay selected
-    /// (and stay marked in the chart) while the user pages through the table.
+    /// (and stay marked in the chart and hull view) while the user pages through the table.
     /// </summary>
     partial void OnSelectedRowChanged(HydrostaticRow? value)
     {
         if (value is not null)
         {
-            _selection.SelectedRow = value;
+            _selection.SelectedDraft = value.Draft;
         }
     }
 
     partial void OnPageSizeChanged(int value) => _ = LoadPageAsync(1);
+
+    private void OnSelectionChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(SelectionService.SelectedDraft))
+        {
+            ShowSelectedDraft();
+        }
+    }
+
+    /// <summary>
+    /// Makes the table show the shared draft: highlight it if it is on this page, otherwise
+    /// fetch the page that contains it (the chart or slider may pick a draft on any page).
+    /// </summary>
+    private void ShowSelectedDraft()
+    {
+        double? draft = _selection.SelectedDraft;
+        HydrostaticRow? row = FindRow(draft);
+        if (draft is null || row is not null)
+        {
+            // The draft is on this page (or cleared). Any page still loading for an older draft
+            // would now show the wrong page, so cancel it.
+            _pageLoadCancellation?.Cancel();
+            SelectedRow = row;
+            return;
+        }
+
+        _ = LoadPageContainingDraftAsync(draft.Value);
+    }
+
+    /// <summary>
+    /// The row on the current page with exactly this draft. Exact equality is safe because every
+    /// draft is snapped to the table's centimetre grid (see SnapToTableDraft).
+    /// </summary>
+    private HydrostaticRow? FindRow(double? draft) =>
+        draft is null ? null : Rows.FirstOrDefault(row => row.Draft == draft);
+
+    // ---- Keyboard ----
+
+    /// <summary>
+    /// Moves the selection one row down (<paramref name="step"/> = 1) or up (−1). At the edge of the page
+    /// it continues on the next or previous page, so the arrow keys walk through the whole table.
+    /// </summary>
+    public async Task MoveSelectionAsync(int step)
+    {
+        if (Rows.Count == 0 || IsLoading)
+        {
+            return;
+        }
+
+        int index = SelectedRow is null ? -1 : Rows.ToList().IndexOf(SelectedRow);
+        if (index < 0)
+        {
+            // Nothing selected on this page yet: start at the top (down) or bottom (up).
+            SelectedRow = step > 0 ? Rows[0] : Rows[^1];
+            return;
+        }
+
+        int target = index + step;
+        if (target >= 0 && target < Rows.Count)
+        {
+            SelectedRow = Rows[target];
+            return;
+        }
+
+        int page = CurrentPage + Math.Sign(step);
+        if (page < 1 || page > TotalPages)
+        {
+            return;  // already at the first or last row of the whole table
+        }
+
+        await LoadPageAsync(page);
+        if (CurrentPage == page && Rows.Count > 0)
+        {
+            SelectedRow = step > 0 ? Rows[0] : Rows[^1];
+        }
+    }
 
     // ---- Commands ----
 

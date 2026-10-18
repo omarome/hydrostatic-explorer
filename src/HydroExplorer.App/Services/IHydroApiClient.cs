@@ -15,6 +15,13 @@ public interface IHydroApiClient
     Task<PagedResult<HydrostaticRow>> GetHydrostaticsAsync(
         int hullId, HydrostaticsPageRequest request, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// The page containing the row nearest to <paramref name="draft"/>, in the given page size and sort order
+    /// (<see cref="HydrostaticsPageRequest.Page"/> is ignored).
+    /// </summary>
+    Task<PagedResult<HydrostaticRow>> GetPageContainingDraftAsync(
+        int hullId, double draft, HydrostaticsPageRequest request, CancellationToken cancellationToken = default);
+
     /// <summary>Evenly sampled (draft, displacement) points across the hull's whole draft range.</summary>
     Task<IReadOnlyList<CurvePoint>> GetCurveAsync(int hullId, int points, CancellationToken cancellationToken = default);
 }

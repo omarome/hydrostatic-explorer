@@ -1,12 +1,15 @@
 using System.ComponentModel;
 using Avalonia.Controls;
+using Avalonia.Input;
+using Avalonia.Interactivity;
 using HydroExplorer.App.ViewModels;
 
 namespace HydroExplorer.App.Views;
 
 /// <summary>
 /// Code-behind for the table. It holds only view glue that XAML bindings can't express:
-/// sending header clicks to the ViewModel and drawing the sort arrow in the header.
+/// sending header clicks and keys to the ViewModel, drawing the sort arrow in the header,
+/// and scrolling the selected row into view.
 /// </summary>
 public partial class HydroTableView : UserControl
 {
@@ -15,6 +18,48 @@ public partial class HydroTableView : UserControl
     public HydroTableView()
     {
         InitializeComponent();
+
+        // "Tunnel" routing: this handler runs on the way *down* to the focused DataGrid, before the grid's
+        // own key handling, so we decide what arrows and PageUp/PageDown do (including crossing pages).
+        // WPF note: WPF expresses the same thing with separate "Preview" events (PreviewKeyDown).
+        AddHandler(KeyDownEvent, OnTableKeyDown, RoutingStrategies.Tunnel);
+    }
+
+    /// <summary>Up/Down move the selection (continuing onto the next/previous page); PageUp/PageDown change page.</summary>
+    private void OnTableKeyDown(object? sender, KeyEventArgs e)
+    {
+        if (_viewModel is null)
+        {
+            return;
+        }
+
+        switch (e.Key)
+        {
+            case Key.Down:
+                _ = _viewModel.MoveSelectionAsync(+1);
+                e.Handled = true;
+                break;
+            case Key.Up:
+                _ = _viewModel.MoveSelectionAsync(-1);
+                e.Handled = true;
+                break;
+            case Key.PageDown:
+                ExecuteIfEnabled(_viewModel.NextPageCommand);
+                e.Handled = true;
+                break;
+            case Key.PageUp:
+                ExecuteIfEnabled(_viewModel.PreviousPageCommand);
+                e.Handled = true;
+                break;
+        }
+    }
+
+    private static void ExecuteIfEnabled(System.Windows.Input.ICommand command)
+    {
+        if (command.CanExecute(null))
+        {
+            command.Execute(null);
+        }
     }
 
     /// <summary>
@@ -53,6 +98,11 @@ public partial class HydroTableView : UserControl
         if (e.PropertyName is nameof(HydroTableViewModel.SortBy) or nameof(HydroTableViewModel.SortDescending))
         {
             UpdateSortArrows();
+        }
+        else if (e.PropertyName == nameof(HydroTableViewModel.SelectedRow) && _viewModel?.SelectedRow is { } row)
+        {
+            // A selection made elsewhere (chart, slider, keys) may be off-screen on a 100-row page.
+            TableGrid.ScrollIntoView(row, null);
         }
     }
 

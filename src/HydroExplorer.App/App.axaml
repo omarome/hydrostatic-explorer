@@ -5,8 +5,67 @@
     <!-- RequestedThemeVariant="Default" follows the macOS light/dark setting. -->
 
     <Application.Styles>
-        <FluentTheme />
+        <FluentTheme>
+            <!-- One accent colour for both themes: the same blue as the chart line and the water,
+                 so the selected grid row, slider and chart read as one design. -->
+            <FluentTheme.Palettes>
+                <ColorPaletteResources x:Key="Light" Accent="#1E88E5" />
+                <ColorPaletteResources x:Key="Dark" Accent="#1E88E5" />
+            </FluentTheme.Palettes>
+        </FluentTheme>
+
         <!-- The DataGrid ships its own styles, which must be included explicitly. -->
         <StyleInclude Source="avares://Avalonia.Controls.DataGrid/Themes/Fluent.xaml" />
+
+        <!-- App-wide styles. Avalonia styles use CSS-like selectors: "Border.panel" means a Border
+             with class "panel" (set with Classes="panel").
+             WPF note: WPF has no style classes. You'd give each Style an x:Key and apply it with
+             Style="{StaticResource PanelStyle}", or use an implicit style that targets every Border. -->
+
+        <!-- A framed area: chart and hull view. -->
+        <Style Selector="Border.panel">
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseLowBrush}" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Padding" Value="10,8" />
+        </Style>
+        <Style Selector="TextBlock.panel-title">
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+        <Style Selector="TextBlock.muted">
+            <Setter Property="Opacity" Value="0.7" />
+        </Style>
+
+        <!-- Error banner above the table. -->
+        <Style Selector="Border.error">
+            <Setter Property="Background" Value="#33E53935" />
+            <Setter Property="BorderBrush" Value="#E53935" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Padding" Value="12,8" />
+            <Setter Property="Margin" Value="0,0,0,8" />
+        </Style>
+
+        <!-- Table: slightly smaller text so all ten columns fit; numbers right-aligned. -->
+        <Style Selector="DataGrid">
+            <Setter Property="FontSize" Value="13" />
+        </Style>
+        <Style Selector="DataGridCell.number">
+            <Setter Property="HorizontalContentAlignment" Value="Right" />
+        </Style>
+
+        <!-- Status bar connection dot: grey until the first request, then green or red. -->
+        <Style Selector="Ellipse.status-dot">
+            <Setter Property="Width" Value="9" />
+            <Setter Property="Height" Value="9" />
+            <Setter Property="Fill" Value="Gray" />
+        </Style>
+        <Style Selector="Ellipse.status-dot.connected">
+            <Setter Property="Fill" Value="#43A047" />
+        </Style>
+        <Style Selector="Ellipse.status-dot.disconnected">
+            <Setter Property="Fill" Value="#E53935" />
+        </Style>
     </Application.Styles>
 </Application>

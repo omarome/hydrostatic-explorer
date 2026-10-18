@@ -6,7 +6,7 @@
         x:Class="HydroExplorer.App.Views.MainWindow"
         x:DataType="vm:MainViewModel"
         Icon="/Assets/avalonia-logo.ico"
-        Width="1280" Height="800" MinWidth="900" MinHeight="560"
+        Width="1440" Height="900" MinWidth="960" MinHeight="600"
         Title="{Binding Title}">
     <!-- x:DataType tells the compiler which ViewModel this view binds to, so every {Binding}
          is checked at build time. WPF note: WPF has no compiled bindings (only d:DataContext
@@ -15,11 +15,29 @@
     <!-- DockPanel: children dock to an edge; the last child fills the remaining space. -->
     <DockPanel>
 
+        <!-- Status bar: API connection state and last load time. Docked before the main area so it
+             claims its strip at the bottom first. -->
+        <Border DockPanel.Dock="Bottom" Padding="16,5" BorderThickness="0,1,0,0"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                DataContext="{Binding Status}">
+            <DockPanel>
+                <TextBlock DockPanel.Dock="Right" Text="{Binding LastLoadText}" Classes="muted" FontSize="12" />
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <!-- Classes.connected="{Binding ...}" adds or removes the "connected" style class. -->
+                    <Ellipse Classes="status-dot"
+                             Classes.connected="{Binding IsConnected}"
+                             Classes.disconnected="{Binding IsDisconnected}"
+                             VerticalAlignment="Center" />
+                    <TextBlock Text="{Binding ConnectionText}" FontSize="12" VerticalAlignment="Center" />
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
         <!-- Top bar: hull selector -->
         <Border DockPanel.Dock="Top" Padding="16,10" BorderThickness="0,0,0,1"
                 BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
             <StackPanel Orientation="Horizontal" Spacing="12">
-                <TextBlock Text="Hull" VerticalAlignment="Center" FontWeight="SemiBold" />
+                <TextBlock Text="Hull" Classes="panel-title" />
                 <!-- Bindings walk through properties: "Table.Hulls" = DataContext.Table.Hulls. -->
                 <ComboBox ItemsSource="{Binding Table.Hulls}"
                           SelectedItem="{Binding Table.SelectedHull}"
@@ -57,15 +75,4 @@
         </Grid>
     </DockPanel>
 
-    <Window.Styles>
-        <!-- Avalonia styles use CSS-like selectors: "Border.panel" = a Border with class "panel".
-             Styles declared on the Window also apply inside child UserControls.
-             WPF note: WPF has no style classes; you'd use a keyed Style and Style="{StaticResource ...}". -->
-        <Style Selector="Border.panel">
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseLowBrush}" />
-            <Setter Property="CornerRadius" Value="4" />
-            <Setter Property="Padding" Value="8" />
-        </Style>
-    </Window.Styles>
 </Window>

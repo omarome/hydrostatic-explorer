@@ -30,6 +30,12 @@ public static class HullEndpoints
             .ProducesValidationProblem()
             .ProducesProblem(StatusCodes.Status404NotFound);
 
+        hulls.MapGet("/{id:int}/hydrostatics/page-of", GetPageOfDraft)
+            .WithName("GetHydrostaticsPageOfDraft")
+            .WithSummary("The page (in the given sort order) containing the table row nearest to a draft.")
+            .ProducesValidationProblem()
+            .ProducesProblem(StatusCodes.Status404NotFound);
+
         hulls.MapGet("/{id:int}/hydrostatics/curve", GetCurve)
             .WithName("GetHydrostaticCurve")
             .WithSummary("Evenly sampled (draft, displacement) points for charting.")
@@ -70,6 +76,49 @@ public static class HullEndpoints
         IReadOnlyList<HydrostaticRow> rows = HydrostaticTableGenerator.Generate(hull);
         PagedResult<HydrostaticRow> result = query.Apply(rows);
         return Results.Ok(result);
+    }
+
+    /// <summary>
+    /// Used when the user picks a draft outside the current page (chart click, slider): the app needs to
+    /// know which page to show. The draft is snapped to the nearest table row (whole cm, within 0.10 m … D).
+    /// </summary>
+    private static IResult GetPageOfDraft(
+        int id,
+        IHullRepository repository,
+        double? draft = null,
+        int pageSize = HydrostaticsQuery.DefaultPageSize,
+        string sortBy = "draft",
+        string sortDir = "asc")
+    {
+        Hull? hull = repository.GetById(id);
+        if (hull is null)
+        {
+            return HullNotFound(id);
+        }
+
+        var query = new HydrostaticsQuery(Page: 1, pageSize, sortBy, sortDir, MinDraft: null, MaxDraft: null);
+        Dictionary<string, string[]> errors = query.Validate();
+        if (draft is null)
+        {
+            errors["draft"] = new[] { "draft is required." };
+        }
+        else if (!double.IsFinite(draft.Value) || draft < 0)
+        {
+            errors["draft"] = new[] { "draft must be a non-negative number." };
+        }
+
+        if (errors.Count > 0)
+        {
+            return Results.ValidationProblem(errors);
+        }
+
+        double tableDraft = HydrostaticTableGenerator.SnapToTableDraft(hull, draft!.Value);
+        PagedResult<HydrostaticRow>? page = query.PageContaining(HydrostaticTableGenerator.Generate(hull), tableDraft);
+
+        // Snapping guarantees the row exists, so null would be a bug, not bad input.
+        return page is null
+            ? Results.Problem($"No table row for draft {tableDraft} m.", statusCode: StatusCodes.Status500InternalServerError)
+            : Results.Ok(page);
     }
 
     private static IResult GetCurve(int id, IHullRepository repository, int points = DefaultCurvePoints)

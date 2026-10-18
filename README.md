@@ -47,16 +47,39 @@ Start the API and click Retry.
 
 ### Using the app
 
-- **Hull**: pick a hull in the top bar. The table reloads at page 1.
-- **Paging**: ⏮ ◀ ▶ ⏭ buttons below the table, plus "Rows per page" (25 / 50 / 100). ⟳ reloads the current page.
-- **Sorting**: click the **T**, **Δ** or **KM** column header to sort the whole table on the server. Click
-  again to reverse. The ▲/▼ arrow shows the current sort.
-- **Selection**: click a row. The chart marks that draft with an orange dot and a dashed line, and shows its
-  values above the chart. The selection stays marked while you page through the table.
-- **Chart**: displacement against draft for the selected hull, loaded once per hull from `/curve`.
-- **Hull side view**: the hull's side profile (L × D) at its true proportions, with the keel baseline (BL). Selecting a
-  row draws the waterline (WL) at that draft, with the submerged part shaded. It re-fits when you resize the window
-  or drag the splitters.
+The table, chart and hull view are three views of one shared selection: a hull and a draft.
+Any of them can change it, and the other two follow.
+
+- **Hull**: pick a hull in the top bar. The table reloads at page 1, and the chart and hull view redraw.
+- **Table**: click a row to select its draft. ⏮ ◀ ▶ ⏭ change page, "Rows per page" sets 25 / 50 / 100, and
+  ⟳ reloads. Click the **T**, **Δ** or **KM** header to sort the whole table on the server (click again to reverse).
+- **Keyboard** (with the table focused): **↑/↓** move the selection one row and continue onto the next or
+  previous page at the page edge. **PageUp/PageDown** change page.
+- **Chart**: displacement against draft. **Click or drag** on it to select the nearest draft. If that row
+  is on another page, the table jumps to it.
+- **Hull side view**: the side profile at its true proportions, with the waterline (WL) at the selected
+  draft and the submerged part shaded. Drag the **Draft** slider under it to scrub through drafts.
+- **Status bar**: green when the API answered the last request, red (with the reason) when it didn't, plus the
+  time and duration of the last successful load.
+
+Every selection snaps to the table's 1 cm grid (for example a click at 3.2547 m selects 3.25 m).
+
+## Demo script (2 minutes)
+
+Before the demo, start the API and the app (see [Run](#run)) and leave both terminals visible.
+The app opens on the **Small Barge** (40 × 10 × 4 m, 391 rows, 16 pages).
+
+| Time | Do this | Point out |
+|---|---|---|
+| 0:00 | Nothing yet | Three views of one model: table (left), curve (top right), hull side view (bottom right). Green status bar: connected, last load ≈ 200 ms (simulated latency). |
+| 0:10 | Click the **0.20** row in the table | Orange marker and dashed line jump to 0.20 m on the chart, the waterline moves, the slider follows. No request was made: the status bar's last load time doesn't change. |
+| 0:25 | Click the chart near **T = 3 m** | The table jumps to the page holding that draft (page 12 of 16 for 3.00 m) and highlights the row: one `page-of` request. Marker and waterline move. |
+| 0:40 | Drag the **Draft** slider slowly left and right | Waterline and marker follow instantly. The table catches up, fetching a page only when the draft leaves the current one. |
+| 0:55 | Click a row, then press **↓** repeatedly past the bottom of the page, then **PageUp** | The selection steps across the page boundary onto the next page. PageUp goes back a page. |
+| 1:10 | Click the **Δ** header twice, then set **Rows per page** to 100 | Server-side sort (the ▲/▼ arrow flips; page 1 now starts at 4.00 m). The page count drops to 4. |
+| 1:25 | Pick **Large Pontoon** in the Hull box | Selection clears, curve and hull redraw (120 × 12 m, still to scale), 1,191 rows. |
+| 1:35 | In the API terminal press **Ctrl+C**, then click **▶** in the app | Red error banner with Retry; status bar turns red and says why. The table keeps the last good page. |
+| 1:50 | Restart the API (`dotnet run --project src/HydroExplorer.Api`), click **Retry** | Data reloads, banner disappears, status bar turns green. |
 
 ## API reference
 
@@ -64,6 +87,7 @@ Start the API and click Retry.
 |---|---|
 | `GET /api/hulls` | All hulls |
 | `GET /api/hulls/{id}/hydrostatics` | One page of the hydrostatic table (`PagedResult<HydrostaticRow>`) |
+| `GET /api/hulls/{id}/hydrostatics/page-of?draft=` | The page containing the row nearest to `draft` (`PagedResult<HydrostaticRow>`) |
 | `GET /api/hulls/{id}/hydrostatics/curve` | Evenly sampled `(draft, displacement)` points for the chart |
 
 Query parameters for `/hydrostatics`:
@@ -75,6 +99,9 @@ Query parameters for `/hydrostatics`:
 | `sortBy` | `draft` | `draft`, `displacement`, `km` (case-insensitive) |
 | `sortDir` | `asc` | `asc`, `desc` |
 | `minDraft`, `maxDraft` | none | Optional draft range in metres, inclusive |
+
+`/page-of` takes `draft` (required, metres, ≥ 0) plus the same `pageSize`, `sortBy` and `sortDir`, so the page
+matches what the table shows. The draft snaps to the nearest table row: whole centimetres, within 0.10 m … D.
 
 `/curve` takes `points` (default 100, allowed 2–1000).
 
@@ -103,6 +130,9 @@ curl "http://localhost:5080/api/hulls/3/hydrostatics?pageSize=50&sortBy=km&sortD
 
 # Only drafts from 3.00 m to 3.49 m (50 rows)
 curl "http://localhost:5080/api/hulls/3/hydrostatics?minDraft=3&maxDraft=3.49&pageSize=100"
+
+# Which page holds draft 3.25 m? Page 13 ascending (page 36 with sortDir=desc)
+curl "http://localhost:5080/api/hulls/3/hydrostatics/page-of?draft=3.25"
 
 # 10 points on the displacement curve
 curl "http://localhost:5080/api/hulls/1/hydrostatics/curve?points=10"

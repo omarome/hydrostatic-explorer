@@ -9,13 +9,17 @@
         <Grid RowDefinitions="Auto,*">
             <!-- Header: title on the left, the selected point's values on the right. -->
             <DockPanel Grid.Row="0" Margin="4,0,4,4">
-                <TextBlock DockPanel.Dock="Right" Text="{Binding MarkerLabel}" Opacity="0.8"
-                           VerticalAlignment="Center" />
-                <TextBlock Text="Hydrostatic curve" FontWeight="SemiBold" VerticalAlignment="Center" />
+                <TextBlock DockPanel.Dock="Right" Text="{Binding MarkerLabel}" Classes="muted" VerticalAlignment="Center" />
+                <TextBlock Text="Hydrostatic curve" Classes="panel-title" />
             </DockPanel>
 
             <!-- LiveCharts2 chart. Series, axes and sections are objects owned by the ViewModel. -->
+            <!-- Clicking or dragging on the chart selects a draft (handled in HydroChartView.axaml.cs). -->
             <lvc:CartesianChart Grid.Row="1"
+                                x:Name="Chart"
+                                Cursor="Cross"
+                                PointerPressed="OnChartPointerPressed"
+                                PointerMoved="OnChartPointerMoved"
                                 Series="{Binding Series}"
                                 XAxes="{Binding XAxes}"
                                 YAxes="{Binding YAxes}"

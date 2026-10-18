@@ -6,10 +6,10 @@
              x:DataType="vm:HullViewModel">
 
     <Border Classes="panel">
-        <Grid RowDefinitions="Auto,*">
+        <Grid RowDefinitions="Auto,*,Auto">
             <DockPanel Grid.Row="0" Margin="4,0,4,4">
-                <TextBlock DockPanel.Dock="Right" Text="{Binding HullName}" Opacity="0.8" VerticalAlignment="Center" />
-                <TextBlock Text="Hull side view" FontWeight="SemiBold" VerticalAlignment="Center" />
+                <TextBlock DockPanel.Dock="Right" Text="{Binding HullName}" Classes="muted" VerticalAlignment="Center" />
+                <TextBlock Text="Hull side view" Classes="panel-title" />
             </DockPanel>
 
             <!-- Our custom control. Its StyledProperties are bound like any built-in control's. -->
@@ -17,6 +17,19 @@
                                       Length="{Binding Length}"
                                       Depth="{Binding Depth}"
                                       Draft="{Binding Draft}" />
+
+            <!-- Draft slider: another way to change the shared selection. Its range is 0.10 m to the
+                 hull depth; moving it selects the nearest whole-centimetre draft. -->
+            <DockPanel Grid.Row="2" Margin="4,4,4,0" IsVisible="{Binding HasHull}">
+                <TextBlock DockPanel.Dock="Left" Text="Draft" VerticalAlignment="Center" Margin="0,0,12,0" />
+                <TextBlock DockPanel.Dock="Right" Text="{Binding DraftLabel}" VerticalAlignment="Center"
+                           MinWidth="84" TextAlignment="Right" />
+                <Slider Minimum="{Binding MinDraft}"
+                        Maximum="{Binding Depth}"
+                        Value="{Binding SliderDraft, Mode=TwoWay}"
+                        SmallChange="0.01"
+                        LargeChange="0.5" />
+            </DockPanel>
         </Grid>
     </Border>
 </UserControl>

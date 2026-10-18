@@ -240,3 +240,71 @@ first version did).
 That was a throwaway scratch tool, not part of the repo. One finding: LiveCharts redraws on its own throttled
 timer, so a capture taken immediately after a selection can show the chart mid-update. That is a capture artifact,
 not an app bug.
+
+## Phase 6: two-way linking and polish
+
+**The shared selection is now a draft, not a row.** In Phase 4 the table was the only source of selections,
+so sharing the selected *row* worked. The new sources (chart click, slider, keyboard) produce a draft, and that
+draft's row may be on a page the table hasn't loaded. Keeping "row" as the shared state would make the chart and
+slider wait for a network round-trip before anything moved. So `SelectionService` now holds `SelectedDraft`
+(a `double?`):
+
+- **Any view can set it instantly.** `SelectDraft(x)` snaps x to the table's 1 cm grid, within 0.10 m … D.
+- **The chart and hull view follow immediately.** The marker's displacement is read off the already-loaded
+  curve by linear interpolation (`CurveInterpolator`, exact for a box hull).
+- **The table treats it as a request.** If the row is on the current page it highlights it (no request).
+  Otherwise it asks the API for the page that contains it.
+
+**Exact draft equality is safe.** `SnapToTableDraft` and the table generator compute drafts with the same
+expression (`Math.Round(cm / 100.0, 2)`), and JSON round-trips doubles exactly, so the table can match a row
+with `==`. A test checks that a snapped draft equals a row's draft bit for bit.
+
+**`page-of` endpoint.** `GET /api/hulls/{id}/hydrostatics/page-of?draft=&pageSize=&sortBy=&sortDir=` returns
+an ordinary `PagedResult` for the page containing the snapped draft. It takes the table's sort order because
+"which page" depends on it: 3.25 m is on page 13 sorted ascending and page 36 sorted descending. It reuses
+`HydrostaticsQuery`'s sorting so the two endpoints can't disagree. A draft above D or below 0.10 m snaps to the
+last or first row; a negative or non-finite draft is a 400.
+
+**Two race guards in the table.** (1) As before, a superseded page response is ignored. (2) New: if the
+selection moves to a row on the current page while a `page-of` request is in flight, that request is cancelled.
+Otherwise its late response would replace the page and the highlighted row would vanish. A test covers each,
+and removing either guard makes its test fail.
+
+**Chart: click and drag, not hover.** The brief allows "clicking or hovering". Hover-to-select would change the
+selection, and often the table's page, every time the mouse crossed the chart on its way somewhere else.
+Click-and-drag gives the same scrubbing feel on purpose. The pixel-to-draft conversion
+(`CartesianChart.ScalePixelsToData`) needs the control, so it lives in the chart's code-behind; the ViewModel
+receives only the draft.
+
+**Slider without feedback loops.** The slider's value is bound two-way to `HullViewModel.SliderDraft`. Moving
+it calls `SelectDraft`. When the selection changes elsewhere, the ViewModel moves the slider while an
+`_isUpdatingFromSelection` flag is set, so that change isn't sent back as a new selection. Without the flag, a
+hull change (slider resets to 0.10 m) would wrongly select 0.10 m. The slider row is hidden until a hull is loaded.
+
+**Keyboard through a tunnelling handler.** The table view registers its KeyDown handler with
+`RoutingStrategies.Tunnel`, so it runs before the DataGrid's own key handling. ↑/↓ call
+`MoveSelectionAsync(±1)`, which continues onto the next or previous page at a page edge and stops at the ends of
+the table. PageUp/PageDown run the page commands. The logic is in the ViewModel (tested), and the code-behind
+only maps keys. Programmatic selections scroll into view with `DataGrid.ScrollIntoView`.
+
+**Status bar fed by the API client.** `HydroApiClient` times each request and reports success or failure to an
+`ApiStatus` singleton. `StatusBarViewModel` formats it. No ViewModel has to remember to update the status bar,
+and every request, including the curve and `page-of`, counts.
+
+**URLs are always formatted with InvariantCulture.** This machine's locale writes 3.25 as "3,25". The page and
+curve requests only had integers, so Phase 3 didn't notice; `page-of` sends a draft, which would have broken.
+A test sets the culture to sv-SE and checks the URL.
+
+**One theme.** Fluent theme with a single accent colour (#1E88E5, the chart's blue) for light and dark, so the
+selected row, slider and chart match. Shared styles (`panel`, `panel-title`, `muted`, `error`, status dots) live
+in App.axaml instead of being repeated in each view. Light and dark both follow the macOS setting.
+
+**Table columns fit the window.** Star widths weighted by content width (like flex-grow), a `MinWidth` so a
+narrow window scrolls sideways instead of squashing numbers, and units on a second header line. At the default
+1440 × 900 window all ten columns are visible. The paging bar is a `WrapPanel`, so at the minimum width the
+page-size selector moves onto a second line instead of being clipped.
+
+**Headless render checks.** The scratch tool from Phase 5 was extended to drive the real window with simulated
+input (`MouseDown` on the chart, `KeyPress` on the grid, a slider move) against the running API, and to
+capture PNGs in light, dark, minimum size and API-down states. That checked the code-behind paths that ViewModel
+tests can't reach. It stays outside the repo.

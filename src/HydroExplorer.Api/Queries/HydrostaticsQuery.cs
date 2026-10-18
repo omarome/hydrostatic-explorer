@@ -70,7 +70,21 @@ public sealed record HydrostaticsQuery(
     }
 
     /// <summary>Filters, sorts and pages <paramref name="rows"/>. Call <see cref="Validate"/> first.</summary>
-    public PagedResult<HydrostaticRow> Apply(IEnumerable<HydrostaticRow> rows)
+    public PagedResult<HydrostaticRow> Apply(IEnumerable<HydrostaticRow> rows) =>
+        Pager.Paginate(FilterAndSort(rows), Page, PageSize);
+
+    /// <summary>
+    /// Returns the page (of <see cref="PageSize"/> rows, in this query's sort order) that contains the row
+    /// with exactly <paramref name="draft"/>, or null if no row has that draft. Page and draft filter are ignored.
+    /// </summary>
+    public PagedResult<HydrostaticRow>? PageContaining(IEnumerable<HydrostaticRow> rows, double draft)
+    {
+        List<HydrostaticRow> sorted = (this with { MinDraft = null, MaxDraft = null }).FilterAndSort(rows);
+        int index = sorted.FindIndex(row => row.Draft == draft);
+        return index < 0 ? null : Pager.Paginate(sorted, Pager.PageOfIndex(index, PageSize), PageSize);
+    }
+
+    private List<HydrostaticRow> FilterAndSort(IEnumerable<HydrostaticRow> rows)
     {
         // 1. Filter by the optional draft range. LINQ's Where is like Array.prototype.filter.
         IEnumerable<HydrostaticRow> filtered = rows;
@@ -91,8 +105,7 @@ public sealed record HydrostaticsQuery(
             ? filtered.OrderByDescending(key).ThenByDescending(row => row.Draft)
             : filtered.OrderBy(key).ThenBy(row => row.Draft);
 
-        // 3. Page.
-        return Pager.Paginate(sorted.ToList(), Page, PageSize);
+        return sorted.ToList();
     }
 
     // A switch expression maps each allowed sortBy value to "which property to sort on".

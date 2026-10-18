@@ -56,11 +56,13 @@ public partial class App : Application
             BaseAddress = new Uri(baseUrl),
             Timeout = TimeSpan.FromSeconds(10),
         });
+        services.AddSingleton<ApiStatus>();         // the client reports into it; the status bar reads it
         services.AddSingleton<IHydroApiClient, HydroApiClient>();
         services.AddSingleton<SelectionService>();  // the one shared selection every ViewModel receives
         services.AddSingleton<HydroTableViewModel>();
         services.AddSingleton<HydroChartViewModel>();
         services.AddSingleton<HullViewModel>();
+        services.AddSingleton<StatusBarViewModel>();
         services.AddSingleton<MainViewModel>();
 
         return services.BuildServiceProvider();
