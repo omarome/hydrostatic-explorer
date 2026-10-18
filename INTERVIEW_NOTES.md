@@ -153,8 +153,10 @@ simulated clicks and key presses. That was a scratch tool, outside the repo.
 
 - Compiled bindings (`x:DataType`, on by default in the csproj) turn a wrong binding path into a **build error**,
   so the most common WPF bug can't reach runtime.
-- **F12** in a Debug build opens Avalonia's developer tools (visual tree, properties, styles, events), enabled by
-  `.WithDeveloperTools()` in `Program.cs`. `.LogToTrace()` sends Avalonia's warnings to the debug output.
+- `.WithDeveloperTools()` in `Program.cs` (Debug builds only) connects the app to **Avalonia Developer Tools**
+  (visual tree, properties, styles, events; F12 to open). That is a separate app from AvaloniaUI, free for
+  individuals under its Community Edition; it isn't needed to build or run this project.
+  `.LogToTrace()` sends Avalonia's warnings to the debug output.
 - In VS Code with the C# Dev Kit, **F5** starts the app under the debugger with breakpoints, as in Visual Studio.
 - Because the logic is in ViewModels, many bugs are faster to reproduce as a failing xUnit test with
   `FakeHydroApiClient` than by clicking through the UI.
