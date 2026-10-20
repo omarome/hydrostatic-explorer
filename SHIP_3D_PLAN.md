@@ -107,8 +107,8 @@ hulls; the slider and selection flow are unchanged.
 - [x] README (hull list, API sample), DECISIONS.md (why Simpson, why this form), CLAUDE.md ("box = exact, ship = integrated").
 
 ### Phase 2: 3D math (App/Rendering)
-- [ ] `OrbitCamera`, `ShipMeshBuilder`, `FaceShading` as above.
-- [ ] Tests: camera target projects to the viewport centre; yaw 90° maps +x onto the screen axis +y used to be on;
+- [x] `OrbitCamera`, `ShipMeshBuilder`, `FaceShading` as above.
+- [x] Tests: camera target projects to the viewport centre; yaw 90° maps +x onto the screen axis +y used to be on;
       points behind the camera return null; pitch is clamped; `FitTo` keeps all mesh vertices inside the viewport.
       Mesh: every vertex inside the L × B × (D + superstructure) bounds; a waterline row exists at exactly T;
       faces split correctly into below/above; box hull gives flat sides; superstructure only for ship hulls.
