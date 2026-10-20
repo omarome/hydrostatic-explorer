@@ -38,6 +38,10 @@ public partial class HullViewModel : ViewModelBase
     [ObservableProperty]
     private double _depth;
 
+    /// <summary>The ship's hull form, or null for a box barge. A Core record, so no UI types here.</summary>
+    [ObservableProperty]
+    private HullShape? _shape;
+
     /// <summary>Null when no draft is selected (no waterline drawn).</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(DraftLabel))]
@@ -76,6 +80,7 @@ public partial class HullViewModel : ViewModelBase
             Length = hull?.Length ?? 0;
             Beam = hull?.Beam ?? 0;
             Depth = hull?.Depth ?? 0;
+            Shape = hull?.Shape;
             Draft = _selection.SelectedDraft;
             SliderDraft = Draft ?? MinDraft;
         }

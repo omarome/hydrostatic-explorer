@@ -1,7 +1,7 @@
 # HydroExplorer: guide for AI agents
 
 Desktop demo app showing hydrostatic data for box barges and ship-shaped hulls in three linked views (paged table,
-displacement curve, hull side/isometric view), fed by a local REST API with server-side paging.
+displacement curve, hull 3D/side view), fed by a local REST API with server-side paging.
 Built as interview prep for a WPF role, so keep code clear, idiomatic and easy to explain.
 
 More context: README.md (run, API reference), ARCHITECTURE.md (data flow, selection sharing),
@@ -31,7 +31,7 @@ dotnet run --project src/HydroExplorer.App     # desktop app
 ```
 src/HydroExplorer.Core   Models/, Hydrostatics/, Paging/, Export/, Data/. No UI, no HTTP. Depends on nothing.
 src/HydroExplorer.Api    Program.cs, Endpoints/, Queries/ (validate → filter → sort → page), Infrastructure/
-src/HydroExplorer.App    Services/, ViewModels/, Views/ (.axaml), Controls/ (custom-drawn hull views)
+src/HydroExplorer.App    Services/, ViewModels/, Views/ (.axaml), Controls/ (custom-drawn hull views), Rendering/ (3D camera, mesh, draw order, shading; pure and tested)
 tests/*.Core.Tests       formulas, table generation, snapping, paging, CSV
 tests/*.Api.Tests        WebApplicationFactory integration tests (ApiFactory.cs)
 tests/*.App.Tests        ViewModels with FakeHydroApiClient / FakeFileSaveService, layout math

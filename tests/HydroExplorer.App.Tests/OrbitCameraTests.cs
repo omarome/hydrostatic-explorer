@@ -107,6 +107,82 @@ public class OrbitCameraTests
         }
     }
 
+    // ---- Framing the default view, zoom limits ----
+
+    private static (Hull Hull, Vector3[] Points) FeederPoints()
+    {
+        Hull feeder = new SeedHullRepository().GetById(5)!;
+        ShipMesh mesh = ShipMeshBuilder.Build(feeder, draft: 5.5);
+        Vector3[] points = mesh.Quads.SelectMany(q => new[] { q.A, q.B, q.C, q.D }).ToArray();
+        return (feeder, points);
+    }
+
+    [Fact]
+    public void Frame_FillsMostOfTheViewport_WithEveryPointInside()
+    {
+        (Hull feeder, Vector3[] points) = FeederPoints();
+        var camera = new OrbitCamera { YawDegrees = 30, PitchDegrees = 25 };
+
+        camera.Frame(points, target: new Vector3(70, 0, (float)feeder.Depth), Viewport);
+
+        Point[] projected = points.Select(p => camera.Project(p)!.Value).ToArray();
+        Assert.All(projected, p => Assert.InRange(p.X, 0, Viewport.Width));
+        Assert.All(projected, p => Assert.InRange(p.Y, 0, Viewport.Height));
+
+        // "Fills": the model reaches at least 80 % of the way to the nearer viewport edge.
+        double reach = projected.Max(p => Math.Max(
+            Math.Abs(p.X - Viewport.Width / 2) / (Viewport.Width / 2),
+            Math.Abs(p.Y - Viewport.Height / 2) / (Viewport.Height / 2)));
+        Assert.InRange(reach, 0.8, 1.0);
+    }
+
+    [Fact]
+    public void Frame_IsTighterThanTheBoundingSphereFit()
+    {
+        (Hull feeder, Vector3[] points) = FeederPoints();
+        var sphere = new OrbitCamera { YawDegrees = 30, PitchDegrees = 25 };
+        var framed = new OrbitCamera { YawDegrees = 30, PitchDegrees = 25 };
+
+        sphere.FitTo(points.Aggregate(Vector3.Min), points.Aggregate(Vector3.Max), Viewport);
+        framed.Frame(points, target: sphere.Target, Viewport);
+
+        Assert.True(framed.Distance < sphere.Distance);
+    }
+
+    [Fact]
+    public void Zoom_IsLimited_SoTheCameraNeverEntersTheModel()
+    {
+        (Hull feeder, Vector3[] points) = FeederPoints();
+        var target = new Vector3(70, 0, (float)feeder.Depth);
+        var camera = new OrbitCamera();
+        camera.Frame(points, target, Viewport);
+        float radius = points.Max(p => Vector3.Distance(p, target));
+
+        camera.Zoom(0.001f);  // try to zoom right in
+        Assert.True(camera.Distance > radius);
+        Assert.All(points, p => Assert.NotNull(camera.Project(p)));  // nothing ends up behind the camera
+
+        camera.Zoom(1000);    // and right out
+        Assert.True(camera.Distance <= radius * 10);
+    }
+
+    [Theory]
+    [InlineData(5, 0)]
+    [InlineData(5, 180)]
+    [InlineData(85, 90)]
+    public void CameraAimedAtTheDeck_IsAlwaysAboveAnyWaterline(float pitch, float yaw)
+    {
+        // Why three drawing passes (below water, water, above water) are enough: with the target on the deck
+        // and pitch ≥ 5°, the eye is above z = D ≥ T, so the water plane always hides the underwater faces
+        // and never anything above it.
+        (Hull feeder, Vector3[] points) = FeederPoints();
+        var camera = new OrbitCamera { YawDegrees = yaw, PitchDegrees = pitch };
+        camera.Frame(points, target: new Vector3(70, 0, (float)feeder.Depth), Viewport);
+        camera.Zoom(0.001f);
+
+        Assert.True(camera.Eye.Z > feeder.Depth);
+    }
+
     private static void AssertSamePixel(Point? expected, Point? actual)
     {
         Assert.NotNull(expected);

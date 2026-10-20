@@ -42,7 +42,7 @@
         <Setter Property="HorizontalContentAlignment" Value="Right" />
     </Style>
 
-    <!-- Hull view tabs (Side / Isometric): Fluent's default tab headers are very large. -->
+    <!-- Hull view tabs (3D / Side): Fluent's default tab headers are very large. -->
     <Style Selector="TabItem">
         <Setter Property="FontSize" Value="{DynamicResource TableFontSize}" />
         <Setter Property="MinHeight" Value="30" />
@@ -69,6 +69,18 @@
         <Setter Property="Foreground" Value="{DynamicResource HullStrokeBrush}" />
         <Setter Property="SeaBrush" Value="{DynamicResource SeaTintBrush}" />
         <Setter Property="SubmergedBrush" Value="{DynamicResource WaterFillBrush}" />
+        <Setter Property="WaterlineBrush" Value="{DynamicResource WaterlineBrush}" />
+    </Style>
+    <Style Selector="controls|Ship3DView">
+        <Setter Property="Foreground" Value="{DynamicResource HullStrokeBrush}" />
+        <Setter Property="HintBrush" Value="{DynamicResource MutedTextBrush}" />
+        <Setter Property="HullTopsideBrush" Value="{DynamicResource HullTopsideBrush}" />
+        <Setter Property="HullBottomBrush" Value="{DynamicResource HullBottomBrush}" />
+        <Setter Property="DeckBrush" Value="{DynamicResource DeckBrush}" />
+        <Setter Property="SuperstructureBrush" Value="{DynamicResource SuperstructureBrush}" />
+        <Setter Property="FunnelBrush" Value="{DynamicResource FunnelBrush}" />
+        <Setter Property="EdgeBrush" Value="{DynamicResource MeshEdgeBrush}" />
+        <Setter Property="WaterplaneBrush" Value="{DynamicResource WaterplaneBrush}" />
         <Setter Property="WaterlineBrush" Value="{DynamicResource WaterlineBrush}" />
     </Style>
     <Style Selector="controls|HullIsometricView">

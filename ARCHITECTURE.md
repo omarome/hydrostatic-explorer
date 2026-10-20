@@ -1,7 +1,7 @@
 # Architecture
 
 Hydrostatics Explorer shows one hull's hydrostatic data in three linked views: a paginated table, a
-displacement curve and a hull view (side profile or isometric). The data comes from a local REST API. Design choices and their
+displacement curve and a hull view (interactive 3D model or side profile). The data comes from a local REST API. Design choices and their
 reasons are in [DECISIONS.md](DECISIONS.md).
 
 ## Projects
@@ -10,7 +10,7 @@ reasons are in [DECISIONS.md](DECISIONS.md).
 |---|---|---|
 | `HydroExplorer.Core` | Domain: `Hull`, `HydrostaticRow`, `CurvePoint` records; `HydrostaticsCalculator` (formulas); table generation and draft snapping; curve sampling and interpolation; CSV formatting (`HydrostaticCsvWriter`); `PagedResult<T>` / `Pager`; seed hulls. No UI, no HTTP. | nothing |
 | `HydroExplorer.Api` | ASP.NET Core minimal API: `/api/hulls`, `/hydrostatics` (filter → sort → page), `/hydrostatics/page-of`, `/hydrostatics/curve`. Validation as ProblemDetails, simulated latency middleware, Swagger. | Core |
-| `HydroExplorer.App` | Avalonia 11 MVVM desktop app: API client, shared selection, ViewModels, views, custom `HullProfileView` and `HullIsometricView` controls, `IFileSaveService` for CSV export. | Core (shares the records, so JSON maps onto the same types) |
+| `HydroExplorer.App` | Avalonia 11 MVVM desktop app: API client, shared selection, ViewModels, views, custom `Ship3DView` (with the camera, mesh and painter's-algorithm code in `Rendering/`) and `HullProfileView` controls, `IFileSaveService` for CSV export. | Core (shares the records, so JSON maps onto the same types) |
 | `*.Tests` | xUnit. Core: formulas and paging math. Api: `WebApplicationFactory` integration tests. App: ViewModels with `FakeHydroApiClient`, `HydroApiClient` with a stub HTTP handler, layout math. | the project under test |
 
 ## Data flow
@@ -27,7 +27,7 @@ flowchart LR
     Status --> StatusVM["StatusBarViewModel"]
     TableVM -- bindings --> TableView["HydroTableView<br/>(DataGrid)"]
     ChartVM -- bindings --> ChartView["HydroChartView<br/>(LiveCharts2)"]
-    HullVM -- bindings --> HullView["HullView<br/>(side + isometric tabs, slider)"]
+    HullVM -- bindings --> HullView["HullView<br/>(3D + side tabs, slider)"]
 ```
 
 1. **API → client.** `HydroApiClient` builds URLs (always with InvariantCulture), sends GETs, deserializes

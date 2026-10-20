@@ -62,4 +62,16 @@ public class FaceShadingTests
 
         Assert.Equal(FaceShading.Ambient + FaceShading.Diffuse * 0.5f, FaceShading.Brightness(Vector3.UnitZ, towardLight), Tolerance);
     }
+
+    [Fact]
+    public void Headlight_LightsTheSideTheCameraSees_FromAbove()
+    {
+        var eye = new Vector3(0, -100, 20);  // out to starboard, a little above
+        Vector3 light = FaceShading.Headlight(eye, target: Vector3.Zero);
+
+        Assert.Equal(1, light.Length(), Tolerance);
+        Assert.True(FaceShading.Brightness(-Vector3.UnitY, light) > 0.8f);  // starboard side, facing the camera
+        Assert.Equal(FaceShading.Ambient, FaceShading.Brightness(Vector3.UnitY, light), Tolerance);  // far side
+        Assert.True(light.Z > 0);  // from above
+    }
 }

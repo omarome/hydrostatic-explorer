@@ -179,6 +179,38 @@ public static class ShipMeshBuilder
         quads.Add(new MeshQuad(V(aft, s, top), V(fore, s, top), V(fore, p, top), V(aft, p, top), part, false));        // roof
     }
 
+    /// <summary>How far the drawn water reaches past the hull on every side, as a fraction of L.</summary>
+    public const double WaterMargin = 0.1;
+
+    /// <summary>
+    /// Corners of the water surface at <paramref name="draft"/>: a rectangle around the hull, reaching
+    /// <see cref="WaterMargin"/> · L past it, anticlockwise seen from above.
+    /// </summary>
+    public static Vector3[] WaterPlane(Hull hull, double draft)
+    {
+        double margin = WaterMargin * hull.Length;
+        double aft = -margin, fore = hull.Length + margin, side = hull.Beam / 2 + margin;
+        return new[] { V(aft, -side, draft), V(fore, -side, draft), V(fore, side, draft), V(aft, side, draft) };
+    }
+
+    /// <summary>
+    /// The waterline on the hull at <paramref name="draft"/>: a closed loop up the starboard side and back down
+    /// the port side, one point per station. For a box it's the rectangle L × B.
+    /// </summary>
+    public static Vector3[] Waterline(Hull hull, double draft)
+    {
+        var loop = new Vector3[2 * (Segments + 1)];
+        for (int i = 0; i <= Segments; i++)
+        {
+            double x = hull.Length * i / Segments;
+            double y = HullGeometry.HalfBreadth(hull, x, draft);
+            loop[i] = V(x, -y, draft);                    // starboard, stern → bow
+            loop[loop.Length - 1 - i] = V(x, y, draft);   // port, bow → stern
+        }
+
+        return loop;
+    }
+
     private static Vector3 V(double x, double y, double z) => new((float)x, (float)y, (float)z);
 
     private static Vector3 Bound(List<MeshQuad> quads, Func<Vector3, Vector3, Vector3> pick)

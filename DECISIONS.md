@@ -431,3 +431,36 @@ sorting about a thousand faces per frame allocates nothing per face.
 0.04–0.20 L, 0.5 D high, 80 % of the narrower deck width; bridge 0.12–0.20 L, 0.25 D higher; funnel 0.06–0.10 L
 up to 0.9 D above the deck. A headless render of the mesh (scratch tool, outside the repo) confirmed the shape,
 the waterline split and the culling before the control is written.
+
+## 3D ship, phase 3: the Ship3DView control
+
+**Draw order in its own class.** `Rendering/DrawOrder` culls back faces and sorts each group far to near
+(painter's algorithm), so `Ship3DView.Render` only draws. The plan had this inside `Render`; as a class it is
+unit-tested. Its lists are reused every frame, so sorting allocates nothing.
+
+**Three passes are correct because the camera orbits the deck.** The target is at deck height amidships and
+pitch is ≥ 5°, so the eye is always above z = D ≥ T (tested). Seen from above the water, everything below the
+waterline is behind the water plane, so "below-water faces → water → above-water faces" needs no per-pixel
+depth test.
+
+**A tighter default view.** `OrbitCamera.Frame` starts from the safe sphere fit and corrects the distance until
+the model fills about 90 % of the panel at the default angle (starboard bow quarter, yaw 30°, pitch 22°).
+The framing includes the widest water (at deck level), so moving the slider doesn't re-zoom. Zoom is limited to
+1.1–8 × the model's radius around the target, so the camera can never be inside the model and no point can be
+behind it. The view re-frames when the hull changes, on double-click, and on resize until the user has moved it.
+
+**A headlight instead of a fixed light.** `FaceShading.Headlight` lights from the camera's side, raised. With a
+light fixed in the world, turning the ship showed its unlit side at ambient brightness only.
+
+**Shaded colours.** Each face's palette colour is multiplied by its brightness, rounded to 32 steps, and the
+brush and seam pen for each (part, below water, step) are cached, cleared when a palette brush changes (theme
+switch). The seam pen, in the fill colour, hides the hairline gaps antialiasing leaves between neighbouring
+faces. In the dark theme the faint face outlines (`MeshEdgeBrush`) are Navy at 25 %; near-black lines made the
+Steel topside look like a lattice in a headless render.
+
+**Pointer input everywhere in the control.** `Ship3DView` implements `ICustomHitTest`, so dragging works over
+the empty water around the ship too; a control with no background is otherwise only hit where it has drawn.
+It sets `ClipToBounds`, so a zoomed-in model doesn't paint over the panel.
+
+**The water.** A translucent rectangle at z = T reaching 0.1 L past the hull, and the waterline drawn round the
+hull from `HullGeometry.HalfBreadth`: the same curve the table's Awp integrates.

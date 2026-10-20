@@ -114,8 +114,8 @@ hulls; the slider and selection flow are unchanged.
       faces split correctly into below/above; box hull gives flat sides; superstructure only for ship hulls.
 
 ### Phase 3: Ship3DView control
-- [ ] Control, palette roles, style in `AppStyles.axaml`, tab swap in `HullView.axaml` (3D default).
-- [ ] `HullViewModel` exposes `Shape`; ViewModel test.
+- [x] Control, palette roles, style in `AppStyles.axaml`, tab swap in `HullView.axaml` (3D default).
+- [x] `HullViewModel` exposes `Shape`; ViewModel test.
 - [ ] Run the app; tell me exactly what to check (rotate, zoom, reset, slider moves the water, hull switch,
       light and dark mode). Fix what I report.
 - [ ] Ask before deleting `HullIsometricView`, `HullIsometricLayout` and their tests.
