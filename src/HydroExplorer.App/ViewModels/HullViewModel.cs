@@ -7,7 +7,7 @@ using HydroExplorer.Core.Models;
 namespace HydroExplorer.App.ViewModels;
 
 /// <summary>
-/// Feeds the hull side view, the isometric view and their shared draft slider. No API calls: the hull's dimensions and the draft
+/// Feeds the 3D view, the side view and their shared draft slider. No API calls: the hull's dimensions and the draft
 /// come from the shared selection, and moving the slider writes the draft back to it.
 /// </summary>
 public partial class HullViewModel : ViewModelBase
@@ -37,6 +37,10 @@ public partial class HullViewModel : ViewModelBase
 
     [ObservableProperty]
     private double _depth;
+
+    /// <summary>The ship's hull form, or null for a box barge. A Core record, so no UI types here.</summary>
+    [ObservableProperty]
+    private HullShape? _shape;
 
     /// <summary>Null when no draft is selected (no waterline drawn).</summary>
     [ObservableProperty]
@@ -76,6 +80,7 @@ public partial class HullViewModel : ViewModelBase
             Length = hull?.Length ?? 0;
             Beam = hull?.Beam ?? 0;
             Depth = hull?.Depth ?? 0;
+            Shape = hull?.Shape;
             Draft = _selection.SelectedDraft;
             SliderDraft = Draft ?? MinDraft;
         }

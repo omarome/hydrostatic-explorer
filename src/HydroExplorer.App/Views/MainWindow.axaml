@@ -18,44 +18,50 @@
         <!-- Status bar: API connection state and last load time. Docked before the main area so it
              claims its strip at the bottom first. -->
         <Border DockPanel.Dock="Bottom" Padding="16,5" BorderThickness="0,1,0,0"
-                BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                BorderBrush="{DynamicResource PanelBorderBrush}"
                 DataContext="{Binding Status}">
             <DockPanel>
-                <TextBlock DockPanel.Dock="Right" Text="{Binding LastLoadText}" Classes="muted" FontSize="12" />
+                <TextBlock DockPanel.Dock="Right" Text="{Binding LastLoadText}" Classes="muted" FontSize="{DynamicResource SmallFontSize}" />
                 <StackPanel Orientation="Horizontal" Spacing="8">
                     <!-- Classes.connected="{Binding ...}" adds or removes the "connected" style class. -->
                     <Ellipse Classes="status-dot"
                              Classes.connected="{Binding IsConnected}"
                              Classes.disconnected="{Binding IsDisconnected}"
                              VerticalAlignment="Center" />
-                    <TextBlock Text="{Binding ConnectionText}" FontSize="12" VerticalAlignment="Center" />
+                    <TextBlock Text="{Binding ConnectionText}" FontSize="{DynamicResource SmallFontSize}" VerticalAlignment="Center" />
                 </StackPanel>
             </DockPanel>
         </Border>
 
-        <!-- Top bar: hull selector -->
+        <!-- Top bar: hull selector, theme toggle on the right -->
         <Border DockPanel.Dock="Top" Padding="16,10" BorderThickness="0,0,0,1"
-                BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
-            <StackPanel Orientation="Horizontal" Spacing="12">
-                <TextBlock Text="Hull" Classes="panel-title" />
-                <!-- Bindings walk through properties: "Table.Hulls" = DataContext.Table.Hulls. -->
-                <ComboBox ItemsSource="{Binding Table.Hulls}"
-                          SelectedItem="{Binding Table.SelectedHull}"
-                          MinWidth="320">
-                    <ComboBox.ItemTemplate>
-                        <!-- A DataTemplate says how to render one item (like the callback in items.map(...)).
-                             It gets its own x:DataType because its DataContext is a Hull. -->
-                        <DataTemplate x:DataType="models:Hull">
-                            <TextBlock>
-                                <Run Text="{Binding Name}" FontWeight="SemiBold" />
-                                <Run Text="{Binding Length, StringFormat='  L {0:0} m'}" />
-                                <Run Text="{Binding Beam, StringFormat='× B {0:0} m'}" />
-                                <Run Text="{Binding Depth, StringFormat='× D {0:0} m'}" />
-                            </TextBlock>
-                        </DataTemplate>
-                    </ComboBox.ItemTemplate>
-                </ComboBox>
-            </StackPanel>
+                BorderBrush="{DynamicResource PanelBorderBrush}">
+            <DockPanel>
+                <!-- The glyph (sun/moon) and tooltip flip in MainViewModel.ToggleTheme; see ThemeToggleIcon. -->
+                <Button DockPanel.Dock="Right" Content="{Binding ThemeToggleIcon}" ToolTip.Tip="{Binding ThemeToggleTooltip}"
+                        Command="{Binding ToggleThemeCommand}" />
+
+                <StackPanel Orientation="Horizontal" Spacing="12">
+                    <TextBlock Text="Hull" Classes="panel-title" />
+                    <!-- Bindings walk through properties: "Table.Hulls" = DataContext.Table.Hulls. -->
+                    <ComboBox ItemsSource="{Binding Table.Hulls}"
+                              SelectedItem="{Binding Table.SelectedHull}"
+                              MinWidth="320">
+                        <ComboBox.ItemTemplate>
+                            <!-- A DataTemplate says how to render one item (like the callback in items.map(...)).
+                                 It gets its own x:DataType because its DataContext is a Hull. -->
+                            <DataTemplate x:DataType="models:Hull">
+                                <TextBlock>
+                                    <Run Text="{Binding Name}" FontWeight="SemiBold" />
+                                    <Run Text="{Binding Length, StringFormat='  L {0:0} m'}" />
+                                    <Run Text="{Binding Beam, StringFormat='× B {0:0} m'}" />
+                                    <Run Text="{Binding Depth, StringFormat='× D {0:0} m'}" />
+                                </TextBlock>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                </StackPanel>
+            </DockPanel>
         </Border>
 
         <!-- Main area: table on the left, chart and hull view stacked on the right.

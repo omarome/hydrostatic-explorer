@@ -330,3 +330,194 @@ ends (RFC 4180). The ViewModel's `ExportCsvCommand` calls `IFileSaveService`, wh
 Avalonia's async save dialog on the main window. Tests use `FakeFileSaveService` to check the file name, content,
 Cancel and write errors without a window. It exports the current page only, as the brief says. Exporting the
 whole table would mean fetching every page, or adding a CSV endpoint to the API.
+
+## Stretch: single-palette styling
+
+**One `ResourceDictionary` with `ThemeDictionaries`, everything else `{DynamicResource ...}`.** Colours, raw
+hex values included, had crept into `App.axaml` (`#1E88E5`, `#E53935`, `#43A047`, ...), `HydroChartViewModel`
+(LiveCharts `SKColor`s), and the two hull controls (`Color.Parse` in `HullDrawing`/`HullIsometricView`). A
+`style-audit` pass moved every one of them into `Styles/Palette.axaml`: raw `Color` resources (navy → ocean →
+teal → aqua, plus success/error/neutral) at the top, then role-named `SolidColorBrush`es
+(`AccentBrush`, `CurveBrush`, `WaterFillBrush`, `MarkerBrush`, ...) inside `ResourceDictionary.ThemeDictionaries`
+for `Light` and `Dark`. Spacing/size resources (`PanelPadding`, `PanelCornerRadius`, `SmallFontSize`, ...) live
+in the same file. `App.axaml` now only merges the palette and includes `Styles/AppStyles.axaml`, which holds the
+control styles that used to sit inline in `App.axaml`.
+WPF note: the same idea in WPF is a `ResourceDictionary` merged into `App.xaml.Resources` and referenced with
+`DynamicResource`; WPF has no `ThemeDictionaries`, so a light/dark switch means swapping dictionaries at runtime
+yourself (or using a third-party theming library).
+
+**Custom controls get `StyledProperty<IBrush?>` water brushes, not static fields.** `HullProfileView` and
+`HullIsometricView` used to share `static readonly IBrush` fields on `HullDrawing`, built once from hex strings
+— which could never repaint on a theme switch even if the hex moved into a resource, because a static field is
+read once. Each control now exposes its own `SeaBrush`/`SubmergedBrush`/`WaterlineBrush`/`WaterplaneBrush`
+`StyledProperty`s (marked `AffectsRender`, like `Foreground`), set by a `controls|HullProfileView` /
+`controls|HullIsometricView` style in `AppStyles.axaml` from the palette. `Render` treats a null brush as "not
+styled yet" and skips that drawing step, rather than falling back to a hard-coded colour.
+
+**Chart colours resolved in the view, not the ViewModel.** `HydroChartViewModel` built its LiveCharts
+`SolidColorPaint`s from `SKColor` statics in its constructor — a ViewModel holding colours, which also meant the
+chart never reacted to a theme change. The ViewModel now builds its `Series`/`Axes` uncoloured and exposes
+`ApplyColors(SKColor curve, SKColor marker, SKColor markerOutline, SKColor axis)`. `HydroChartView`'s
+code-behind resolves `CurveBrush`/`MarkerBrush`/`MarkerOutlineBrush`/`AxisBrush` from the palette
+(`TryFindResource`, converting the resolved `ISolidColorBrush.Color` to an `SKColor`) and calls `ApplyColors`
+from `OnDataContextChanged` and again on `ActualThemeVariantChanged`, so the chart repaints on a light/dark
+switch without the ViewModel ever naming a colour.
+
+## 3D ship, phase 1: hull form and numerical hydrostatics
+
+**Simpson's rule.** It's the integration rule naval architects use on offsets tables ("Simpson's first rule"),
+so the code reads like the textbook. It's exact for polynomials up to degree 3, which gives a strong test: on a
+box (constant half-breadth) the integrator must reproduce every box formula to 1e-9. The integrator is run on
+the box seed hulls directly for that test, since `HullShape` can't express the infinite exponents of a box.
+
+**Analytic hull form, not an offsets table.** `y = B/2 · f(ξ) · g(z)` with power-law ends and sections. Three
+numbers describe a believable hull, p = q = 2 is the Wigley hull with closed-form answers to test against, and
+Cb has a closed form (`HullShape.FullDepthBlockCoefficient`). Each half of the ship is integrated separately
+(midships is a station) because the fore and aft exponents differ, and Simpson's rule needs a smooth function
+over each piece. That's why station counts must be 5, 9, …, 41, …
+
+**Convergence test at 1e-4, not the plan's 1e-6.** Measured before writing the test: doubling the stations
+changes the Coastal Tanker's volume by 8.5e-6, and doubling the waterlines by up to 2.5e-5. Its high exponents
+(8 / 6 / 10) have large fourth derivatives, which is Simpson's error term. The Feeder converges to ~1e-16
+along the length. 2.5e-5 is about 0.25 t on 10,000 t, so the default grid (41 × 21) was kept and the test
+tolerance set to 1e-4, rather than doing 4× the work for ~1e-6.
+
+**Awp only "never decreases" in the tests.** Near the deck the tanker's sides are nearly vertical (q = 10):
+`(1 − T/D)^10` falls below 1e-15, so consecutive rows have equal Awp in double precision. Volume is still
+strictly increasing.
+
+**`Hull.Shape` as an optional last parameter.** Existing calls and JSON without `shape` still work; boxes
+serialize `"shape": null`. `FullDepthBlockCoefficient` is a computed property, so it appears in the JSON too
+(read-only, ignored when deserializing); that's handy for curl users and costs nothing.
+
+**No caching yet.** The API still generates the whole table per request. Measured: a Container Feeder page
+takes ~75–95 ms of computation (box barges ~3 ms), on top of the 200 ms simulated latency. That's fine for a
+demo. If it ever matters, caching the generated table per hull (hulls are immutable) is simpler than the plan's
+cumulative integration.
+
+**Interim look in the app.** Until phase 3 the side and isometric views draw hulls 4 and 5 as boxes; the
+table, curve and CSV already show the integrated values.
+
+## 3D ship, phase 2: camera, mesh and shading
+
+**Plain `System.Numerics`, no 3D library.** `OrbitCamera` builds the standard view and perspective matrices
+with `Matrix4x4.CreateLookAt` / `CreatePerspectiveFieldOfView` and divides by w itself, so every step of the
+pipeline can be explained and unit-tested. It returns Avalonia's `Point` and takes a `Size`, as the existing
+`*Layout` classes do; those are plain value types, and nothing in `Rendering/` draws.
+
+**Conventions.** World = hull coordinates (x to the bow, y to port, z up). Yaw 0 looks at the starboard side
+with the bow to the right. Pitch is clamped to 5°–85°. The plan's test "yaw 90° maps +x onto the screen axis
++y used to be on" is written as rotation: a point on +x at yaw 90° lands on the same pixel as the matching
+point on the y axis at yaw 0, because at yaw 0 the y axis points into the screen.
+
+**Fit by bounding sphere.** `FitTo` backs off until the box's bounding sphere fills the narrower viewing angle
+(`d = r / sin(halfAngle)`). A sphere looks the same from every side, so the model stays in view however it's
+rotated (tested at several yaws). The cost: a long, narrow ship fills only about half the width. Phase 3 may
+tighten the default zoom.
+
+**`FaceShading` returns a brightness, not a colour.** Lambert `ambient + diffuse · max(0, n·l)` in [0.35, 1].
+The control multiplies a palette colour by it, so colours stay in `Palette.axaml`. Normals use the cross product
+of the diagonals, which works for the slightly non-planar quads on the curved hull. A quad with no area (where
+the sides meet at the bow) gets a zero normal instead of NaN.
+
+**Mesh: one grid row exactly at the draft.** Twelve height levels, with the draft inserted, or an existing level
+moved onto it if it's within 1 % of a slice (no sliver faces). So every hull face is wholly below or wholly above
+the water. The sides use `HullGeometry.HalfBreadth`, the same function the hydrostatics integrate, so the 3D
+hull and the table describe the same hull. Ships need no bottom or end faces (the half-breadth is 0 at the keel
+and the ends); box barges get a bottom, a transom and a flat bow. `MeshQuad` is a `readonly record struct`, so
+sorting about a thousand faces per frame allocates nothing per face.
+
+**Superstructure proportions** (decorative; fractions of L from the stern and of D above the deck): deckhouse
+0.04–0.20 L, 0.5 D high, 80 % of the narrower deck width; bridge 0.12–0.20 L, 0.25 D higher; funnel 0.06–0.10 L
+up to 0.9 D above the deck. A headless render of the mesh (scratch tool, outside the repo) confirmed the shape,
+the waterline split and the culling before the control is written.
+
+## 3D ship, phase 3: the Ship3DView control
+
+**Draw order in its own class.** `Rendering/DrawOrder` culls back faces and sorts each group far to near
+(painter's algorithm), so `Ship3DView.Render` only draws. The plan had this inside `Render`; as a class it is
+unit-tested. Its lists are reused every frame, so sorting allocates nothing.
+
+**Three passes are correct because the camera orbits the deck.** The target is at deck height amidships and
+pitch is ≥ 5°, so the eye is always above z = D ≥ T (tested). Seen from above the water, everything below the
+waterline is behind the water plane, so "below-water faces → water → above-water faces" needs no per-pixel
+depth test.
+
+**A tighter default view.** `OrbitCamera.Frame` starts from the safe sphere fit and corrects the distance until
+the model fills about 90 % of the panel at the default angle (starboard bow quarter, yaw 30°, pitch 22°).
+The framing includes the widest water (at deck level), so moving the slider doesn't re-zoom. Zoom is limited to
+1.1–8 × the model's radius around the target, so the camera can never be inside the model and no point can be
+behind it. The view re-frames when the hull changes, on double-click, and on resize until the user has moved it.
+
+**A headlight instead of a fixed light.** `FaceShading.Headlight` lights from the camera's side, raised. With a
+light fixed in the world, turning the ship showed its unlit side at ambient brightness only.
+
+**Shaded colours.** Each face's palette colour is multiplied by its brightness, rounded to 32 steps, and the
+brush and seam pen for each (part, below water, step) are cached, cleared when a palette brush changes (theme
+switch). The seam pen, in the fill colour, hides the hairline gaps antialiasing leaves between neighbouring
+faces. In the dark theme the faint face outlines (`MeshEdgeBrush`) are Navy at 25 %; near-black lines made the
+Steel topside look like a lattice in a headless render.
+
+**Pointer input everywhere in the control.** `Ship3DView` implements `ICustomHitTest`, so dragging works over
+the empty water around the ship too; a control with no background is otherwise only hit where it has drawn.
+It sets `ClipToBounds`, so a zoomed-in model doesn't paint over the panel.
+
+**The water.** A translucent rectangle at z = T reaching 0.1 L past the hull, and the waterline drawn round the
+hull from `HullGeometry.HalfBreadth`: the same curve the table's Awp integrates.
+
+**Isometric view removed.** `HullIsometricView`, `HullIsometricLayout` and their tests were deleted (agreed)
+once the 3D view replaced the tab; the shared `HullDrawing` helper stays for the side view and the 3D caption.
+The palette's `WaterplaneBrush` is reused by the 3D water.
+
+## Extra: a Service Operation Vessel (hull 6)
+
+**Sources and assumptions.** Length 90 m and beam 19 m sit in the range of Ulstein's SOV/CSOV designs
+(SX195 93 × 18 m, SX222/SX226 89.6 × 19.2 m; ulstein.com/vessels/csov-sov-vessel); Offshore Magazine gives
+"about 80 m" and 80–90 persons on board. Neither publishes depth or draft, so D = 8 m is an assumption, as are
+the exponents (bow 4, stern 5, section 6: Cb ≈ 0.70, a full stern for the aft working deck). The X-BOW shape,
+cranes and daughter craft aren't modelled: the power-law hull form can't express an X-BOW.
+
+**`SuperstructureLayout` in `HullShape`.** The SOV needs its superstructure forward, so the layout became data:
+an enum `AftAccommodation | ForwardAccommodation` as an optional last parameter of `HullShape` (only ship hulls
+have a superstructure). It's decorative; the hydrostatics ignore it. `[JsonConverter(typeof(JsonStringEnumConverter))]`
+on the enum makes the API send `"ForwardAccommodation"` instead of `1`; System.Text.Json is part of .NET, so Core
+still has no package dependencies. Choosing the layout in the app by hull id would have hidden the rule.
+
+**The SOV model.** Three accommodation tiers (0.55–0.85 L, stepping in and back towards the top), the bridge
+on top with a helideck slab overhanging forward, a gangway tower at 0.44–0.48 L with the gangway boom stowed aft
+along the centreline, and nothing on the deck aft of 0.22 L. Two new mesh parts and palette roles:
+`GangwayBrush` (Amber; gangways are painted safety yellow/orange) and `HelideckBrush` (Kelp; helidecks are
+traditionally green). The fixed `SuperstructureHeightFactor` became `MaxHeightAboveDeck(shape)`, since the SOV's
+superstructure (1.41 D, ~11 m) is taller than a coaster's funnel (0.9 D).
+
+## 3D ship, phase 4: polish
+
+**One superstructure definition for both views.** The boxes moved out of `ShipMeshBuilder` into
+`Rendering/SuperstructureBoxes` (aft/forward accommodation, with `MaxHeightAboveDeck`). The 3D mesh turns each box
+into five faces; the side profile draws each as a rectangle. A test checks that the mesh spans exactly the boxes.
+`HullProfileLayout.Create` takes an optional `heightAboveDeck`, so the profile shrinks just enough to fit the
+superstructure (default 0: the existing layout tests are unchanged).
+
+**Smoothness, measured.** A headless timing of `Ship3DView.Render` during simulated drags (Release, 900 × 600):
+
+| Hull | Before | After |
+|---|---|---|
+| Large Pontoon | 11.5 ms, 3.5 MB/frame | 9.5 ms, 1.9 MB/frame |
+| Container Feeder | 6.2 ms, 2.7 MB/frame | 4.1 ms, 1.4 MB/frame |
+| Service Operation Vessel | 4.9 ms, 2.5 MB/frame | 3.5 ms, 1.3 MB/frame |
+
+Changes: the camera builds its view and projection matrices once per frame instead of per point (they're cached
+until yaw, pitch, distance, target or viewport changes); the outline and waterline pens are cached with the shaded
+brushes; faces use `StreamGeometry` instead of `PolylineGeometry`. What's left is mostly one geometry object per
+face per frame, which Avalonia's `DrawingContext` requires: faces must be drawn one at a time in depth order, so
+they can't be batched by colour. Short-lived Gen0 objects are cheap for .NET's GC, and every case is well inside
+a 60 fps frame. The pontoon is slowest because a box shows more faces at once (flat ends and more height slices).
+
+**Body plan (optional extra, agreed).** `BodyPlanView` draws the sections at stations 1–9 of 10 from
+`HullGeometry.HalfBreadth`: aft half left, forward half right, midships on both and drawn heavier, the waterline
+across. Stations 0 and 10 are left out: a ship has no width there. Section and scaling math is in
+`BodyPlanLayout`, tested like the other layouts. The caption sits at the top edge, as in the 3D view, so it can't
+collide with the "CL" label.
+
+**Demo script.** The keyboard and sorting steps were merged into one row to make room for the 3D steps (SOV,
+rotate, slider, Side and Body plan) and keep the script at about 2 minutes.

@@ -3,8 +3,8 @@ using HydroExplorer.Core.Models;
 namespace HydroExplorer.Core.Hydrostatics;
 
 /// <summary>
-/// Hydrostatic formulas for a box-shaped hull. For a box, every formula is exact
-/// (no numerical integration of hull offsets is needed).
+/// Hydrostatics for one hull at one draft. Box barges use the exact formulas below (no integration needed);
+/// ship hulls are integrated numerically by <see cref="NumericalHydrostatics"/>.
 /// </summary>
 /// <remarks>
 /// A static class has no instances and no state, like a module of pure functions in TypeScript.
@@ -22,6 +22,12 @@ public static class HydrostaticsCalculator
         ValidateHull(hull);
         ValidateDraft(hull, draft);
 
+        if (hull.Shape is not null)
+        {
+            return NumericalHydrostatics.Calculate(hull, draft);
+        }
+
+        // Box barge: every formula below is exact.
         double length = hull.Length;  // L
         double beam = hull.Beam;      // B
         double t = draft;             // T
@@ -60,6 +66,13 @@ public static class HydrostaticsCalculator
         RequirePositive(hull.Length, nameof(hull.Length));
         RequirePositive(hull.Beam, nameof(hull.Beam));
         RequirePositive(hull.Depth, nameof(hull.Depth));
+
+        if (hull.Shape is HullShape shape)
+        {
+            RequirePositive(shape.BowExponent, nameof(shape.BowExponent));
+            RequirePositive(shape.SternExponent, nameof(shape.SternExponent));
+            RequirePositive(shape.SectionExponent, nameof(shape.SectionExponent));
+        }
     }
 
     private static void ValidateDraft(Hull hull, double draft)

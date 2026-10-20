@@ -2,22 +2,17 @@ using System.Globalization;
 using Avalonia;
 using Avalonia.Layout;
 using Avalonia.Media;
-using Avalonia.Media.Immutable;
 
 namespace HydroExplorer.App.Controls;
 
 /// <summary>
-/// Colours and small drawing helpers shared by the two hull controls (side view and isometric view),
-/// so both draw the water and labels the same way.
+/// Small drawing helpers shared by the hull controls (side view and 3D view), so both draw
+/// labels and captions the same way. Colours are not here: each control exposes its own StyledProperty
+/// brushes (see HullProfileView/Ship3DView), set from Palette.axaml by a style in AppStyles.axaml.
 /// </summary>
 internal static class HullDrawing
 {
     public const double LabelFontSize = 12;
-
-    // Immutable brushes and pens can be shared safely between controls and threads.
-    public static readonly IBrush SeaBrush = new ImmutableSolidColorBrush(Color.Parse("#331E88E5"));
-    public static readonly IBrush SubmergedBrush = new ImmutableSolidColorBrush(Color.Parse("#991E88E5"));
-    public static readonly IPen WaterlinePen = new ImmutablePen(Color.Parse("#1E88E5").ToUInt32(), 2);
 
     /// <summary>Draws <paramref name="text"/> vertically centred on <paramref name="anchor"/>.</summary>
     public static void DrawLabel(DrawingContext context, string text, Point anchor, IBrush brush, HorizontalAlignment alignment)
