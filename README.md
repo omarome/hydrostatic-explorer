@@ -1,6 +1,9 @@
 # Hydrostatics Explorer
+<img width="2870" height="1686" alt="image" src="https://github.com/user-attachments/assets/0b850cdc-3ac4-47e9-87de-00959977ceed" />
+<img width="2878" height="1698" alt="image" src="https://github.com/user-attachments/assets/1872e443-b7b9-44ca-b7d9-c1f78aa185f5" />
 
-A small desktop demo app: hydrostatic data for a hull, shown in three connected views
+
+A small desktop demo app: hydrostatic data for a hull, shown in three connected views(dark/light mode)
 (table, curve, hull view). The data comes from a local REST API with server-side paging.
 
 Six sample hulls: three box barges, whose hydrostatics follow exact formulas, and three ship-shaped hulls,
