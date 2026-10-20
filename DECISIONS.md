@@ -489,3 +489,35 @@ along the centreline, and nothing on the deck aft of 0.22 L. Two new mesh parts 
 `GangwayBrush` (Amber; gangways are painted safety yellow/orange) and `HelideckBrush` (Kelp; helidecks are
 traditionally green). The fixed `SuperstructureHeightFactor` became `MaxHeightAboveDeck(shape)`, since the SOV's
 superstructure (1.41 D, ~11 m) is taller than a coaster's funnel (0.9 D).
+
+## 3D ship, phase 4: polish
+
+**One superstructure definition for both views.** The boxes moved out of `ShipMeshBuilder` into
+`Rendering/SuperstructureBoxes` (aft/forward accommodation, with `MaxHeightAboveDeck`). The 3D mesh turns each box
+into five faces; the side profile draws each as a rectangle. A test checks that the mesh spans exactly the boxes.
+`HullProfileLayout.Create` takes an optional `heightAboveDeck`, so the profile shrinks just enough to fit the
+superstructure (default 0: the existing layout tests are unchanged).
+
+**Smoothness, measured.** A headless timing of `Ship3DView.Render` during simulated drags (Release, 900 × 600):
+
+| Hull | Before | After |
+|---|---|---|
+| Large Pontoon | 11.5 ms, 3.5 MB/frame | 9.5 ms, 1.9 MB/frame |
+| Container Feeder | 6.2 ms, 2.7 MB/frame | 4.1 ms, 1.4 MB/frame |
+| Service Operation Vessel | 4.9 ms, 2.5 MB/frame | 3.5 ms, 1.3 MB/frame |
+
+Changes: the camera builds its view and projection matrices once per frame instead of per point (they're cached
+until yaw, pitch, distance, target or viewport changes); the outline and waterline pens are cached with the shaded
+brushes; faces use `StreamGeometry` instead of `PolylineGeometry`. What's left is mostly one geometry object per
+face per frame, which Avalonia's `DrawingContext` requires: faces must be drawn one at a time in depth order, so
+they can't be batched by colour. Short-lived Gen0 objects are cheap for .NET's GC, and every case is well inside
+a 60 fps frame. The pontoon is slowest because a box shows more faces at once (flat ends and more height slices).
+
+**Body plan (optional extra, agreed).** `BodyPlanView` draws the sections at stations 1–9 of 10 from
+`HullGeometry.HalfBreadth`: aft half left, forward half right, midships on both and drawn heavier, the waterline
+across. Stations 0 and 10 are left out: a ship has no width there. Section and scaling math is in
+`BodyPlanLayout`, tested like the other layouts. The caption sits at the top edge, as in the 3D view, so it can't
+collide with the "CL" label.
+
+**Demo script.** The keyboard and sorting steps were merged into one row to make room for the 3D steps (SOV,
+rotate, slider, Side and Body plan) and keep the script at about 2 minutes.

@@ -27,7 +27,7 @@ public class ShipMeshBuilderTests
     {
         Hull hull = Seeds.GetById(hullId)!;
         ShipMesh mesh = ShipMeshBuilder.Build(hull, draft: hull.Depth / 3);
-        float top = (float)(hull.Depth * (1 + ShipMeshBuilder.MaxHeightAboveDeck(hull.Shape)));
+        float top = (float)(hull.Depth * (1 + SuperstructureBoxes.MaxHeightAboveDeck(hull.Shape)));
 
         foreach (Vector3 v in Vertices(mesh))
         {
@@ -164,8 +164,8 @@ public class ShipMeshBuilderTests
     [Fact]
     public void MaxHeightAboveDeck_IsZeroForABox_AndTallerForTheSov()
     {
-        Assert.Equal(0, ShipMeshBuilder.MaxHeightAboveDeck(null));
-        Assert.True(ShipMeshBuilder.MaxHeightAboveDeck(Sov.Shape) > ShipMeshBuilder.MaxHeightAboveDeck(Feeder.Shape));
+        Assert.Equal(0, SuperstructureBoxes.MaxHeightAboveDeck(null));
+        Assert.True(SuperstructureBoxes.MaxHeightAboveDeck(Sov.Shape) > SuperstructureBoxes.MaxHeightAboveDeck(Feeder.Shape));
     }
 
     [Fact]

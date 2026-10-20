@@ -155,6 +155,8 @@ public sealed class Ship3DView : Control, ICustomHitTest
     // Shaded fill brush and seam pen per (part, below water?, brightness step), so drawing a frame doesn't
     // create a brush per face. Cleared whenever a palette brush changes (e.g. a light/dark theme switch).
     private readonly Dictionary<(MeshPart Part, bool BelowWater, int Level), (IBrush Fill, IPen Seam)> _shadeCache = new();
+    private IPen? _edgePen;       // also cached, and cleared with the shade cache
+    private IPen? _waterlinePen;
 
     // Rebuilt when the hull or the draft changes; the camera is re-framed only when the hull changes.
     private ShipMesh? _mesh;
@@ -191,6 +193,8 @@ public sealed class Ship3DView : Control, ICustomHitTest
         else if (change.Property.PropertyType == typeof(IBrush))
         {
             _shadeCache.Clear();
+            _edgePen = null;
+            _waterlinePen = null;
         }
     }
 
@@ -255,12 +259,15 @@ public sealed class Ship3DView : Control, ICustomHitTest
         }
 
         // The seam pen is the fill colour: it covers the hairline gaps antialiasing leaves between neighbouring faces.
-        var polygon = new PolylineGeometry(new[] { a, b, c, d }, isFilled: true);
+        // A StreamGeometry is the lightest geometry Avalonia has: one is still needed per face per frame, because
+        // DrawingContext only draws geometry objects and the faces must be drawn one by one in depth order.
+        StreamGeometry polygon = Polygon(a, b, c, d);
         context.DrawGeometry(fill, seam, polygon);
 
         if (quad.Part == MeshPart.Hull && EdgeBrush is { } edgeBrush)
         {
-            context.DrawGeometry(null, new Pen(edgeBrush, 0.5), polygon);
+            _edgePen ??= new ImmutablePen(edgeBrush.ToImmutable(), 0.5);
+            context.DrawGeometry(null, _edgePen, polygon);
         }
     }
 
@@ -278,7 +285,8 @@ public sealed class Ship3DView : Control, ICustomHitTest
 
         if (WaterlineBrush is { } lineBrush && ProjectAll(_waterline) is { } line)
         {
-            context.DrawGeometry(null, new Pen(lineBrush, 1.5), new PolylineGeometry(line, isFilled: false));
+            _waterlinePen ??= new ImmutablePen(lineBrush.ToImmutable(), 1.5);
+            context.DrawGeometry(null, _waterlinePen, new PolylineGeometry(line, isFilled: false));
         }
     }
 
@@ -312,6 +320,18 @@ public sealed class Ship3DView : Control, ICustomHitTest
         }
 
         return shade;
+    }
+
+    private static StreamGeometry Polygon(Point a, Point b, Point c, Point d)
+    {
+        var geometry = new StreamGeometry();
+        using StreamGeometryContext path = geometry.Open();
+        path.BeginFigure(a, isFilled: true);
+        path.LineTo(b);
+        path.LineTo(c);
+        path.LineTo(d);
+        path.EndFigure(isClosed: true);
+        return geometry;
     }
 
     private Point[]? ProjectAll(Vector3[] points)

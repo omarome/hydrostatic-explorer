@@ -30,6 +30,16 @@ public sealed class OrbitCamera
     private const float MinDistanceFactor = 1.1f;
     private const float MaxDistanceFactor = 8f;
 
+    private Vector3 _target;
+    private float _yawDegrees;
+    private Size _viewport;
+
+    // The view and projection matrices are built once and reused for every point, until a property changes:
+    // projecting a mesh means thousands of points per frame, but the camera only moves between frames.
+    private bool _matricesAreStale = true;
+    private Matrix4x4 _view;
+    private Matrix4x4 _viewProjection;
+
     private float _minDistance = 0.01f;
     private float _maxDistance = float.MaxValue;
 
@@ -37,27 +47,43 @@ public sealed class OrbitCamera
     private float _distance = 100;
 
     /// <summary>The point the camera looks at and orbits around.</summary>
-    public Vector3 Target { get; set; }
+    public Vector3 Target
+    {
+        get => _target;
+        set { _target = value; _matricesAreStale = true; }
+    }
 
     /// <summary>Angle around the vertical axis. 0 = looking at the starboard side.</summary>
-    public float YawDegrees { get; set; }
+    public float YawDegrees
+    {
+        get => _yawDegrees;
+        set { _yawDegrees = value; _matricesAreStale = true; }
+    }
 
     /// <summary>Angle above the horizontal, clamped to 5°–85° so the camera never goes under the water or straight overhead.</summary>
     public float PitchDegrees
     {
         get => _pitchDegrees;
-        set => _pitchDegrees = Math.Clamp(value, MinPitchDegrees, MaxPitchDegrees);
+        set { _pitchDegrees = Math.Clamp(value, MinPitchDegrees, MaxPitchDegrees); _matricesAreStale = true; }
     }
 
     /// <summary>Distance from the target to the camera (m). Must be positive.</summary>
     public float Distance
     {
         get => _distance;
-        set => _distance = value > 0 ? value : throw new ArgumentOutOfRangeException(nameof(value), value, "Distance must be positive.");
+        set
+        {
+            _distance = value > 0 ? value : throw new ArgumentOutOfRangeException(nameof(value), value, "Distance must be positive.");
+            _matricesAreStale = true;
+        }
     }
 
     /// <summary>Size of the drawing area in pixels.</summary>
-    public Size Viewport { get; set; }
+    public Size Viewport
+    {
+        get => _viewport;
+        set { _viewport = value; _matricesAreStale = true; }
+    }
 
     /// <summary>Camera position: <see cref="Distance"/> away from the target, in the direction set by yaw and pitch.</summary>
     public Vector3 Eye
@@ -86,7 +112,8 @@ public sealed class OrbitCamera
             return null;
         }
 
-        Vector4 clip = Vector4.Transform(new Vector4(point, 1), ViewProjection());
+        UpdateMatrices();
+        Vector4 clip = Vector4.Transform(new Vector4(point, 1), _viewProjection);
 
         // For a perspective projection w is the distance in front of the camera. Too small (or negative)
         // means at or behind the camera, where dividing by w would flip or explode the point.
@@ -105,7 +132,11 @@ public sealed class OrbitCamera
     /// How far in front of the camera <paramref name="point"/> is, along the viewing direction.
     /// Larger is farther; the painter's algorithm draws the largest first.
     /// </summary>
-    public float ViewDepth(Vector3 point) => -Vector3.Transform(point, View()).Z;
+    public float ViewDepth(Vector3 point)
+    {
+        UpdateMatrices();
+        return -Vector3.Transform(point, _view).Z;
+    }
 
     /// <summary>
     /// Aims at the centre of the box <paramref name="min"/>–<paramref name="max"/> and backs off until the
@@ -206,10 +237,17 @@ public sealed class OrbitCamera
 
     private float FarPlane => Distance * 10;
 
-    private Matrix4x4 View() => Matrix4x4.CreateLookAt(Eye, Target, Vector3.UnitZ);
+    private void UpdateMatrices()
+    {
+        if (!_matricesAreStale)
+        {
+            return;
+        }
 
-    private Matrix4x4 ViewProjection() =>
-        View() * Matrix4x4.CreatePerspectiveFieldOfView(Radians(FieldOfViewDegrees), AspectRatio, NearPlane, FarPlane);
+        _view = Matrix4x4.CreateLookAt(Eye, Target, Vector3.UnitZ);
+        _viewProjection = _view * Matrix4x4.CreatePerspectiveFieldOfView(Radians(FieldOfViewDegrees), AspectRatio, NearPlane, FarPlane);
+        _matricesAreStale = false;
+    }
 
     private static float Radians(float degrees) => degrees * MathF.PI / 180;
 }
