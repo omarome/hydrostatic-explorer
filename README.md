@@ -3,7 +3,7 @@
 A small desktop demo app: hydrostatic data for a hull, shown in three connected views
 (table, curve, hull view). The data comes from a local REST API with server-side paging.
 
-Five sample hulls: three box barges, whose hydrostatics follow exact formulas, and two ship-shaped hulls,
+Six sample hulls: three box barges, whose hydrostatics follow exact formulas, and three ship-shaped hulls,
 whose hydrostatics are integrated numerically with Simpson's rule.
 
 | Id | Hull | L × B × D (m) | Form | Cb at full depth |
@@ -13,9 +13,18 @@ whose hydrostatics are integrated numerically with Simpson's rule.
 | 3 | Large Pontoon | 120 × 30 × 12 | box | 1 |
 | 4 | Coastal Tanker | 100 × 16 × 8 | ship, full (exponents 8 / 6 / 10) | 0.79 |
 | 5 | Container Feeder | 140 × 22 × 11 | ship, fine (exponents 3 / 3 / 5) | 0.63 |
+| 6 | Service Operation Vessel | 90 × 19 × 8 | ship, full stern (exponents 4 / 5 / 6), accommodation forward | 0.70 |
 
 The ship form is `y(x, z) = B/2 · (1 − |ξ|^p) · (1 − (1 − z/D)^q)`, with p for the bow or stern half and q for
 the sections (see `HullShape` and `HullGeometry` in Core).
+
+The **Service Operation Vessel** (SOV) is the kind of ship that supports offshore wind farms: accommodation for
+the technicians, and a motion-compensated "walk-to-work" gangway to step across to the turbines. Its length and
+beam follow [Ulstein's SOV designs](https://ulstein.com/vessels/csov-sov-vessel) (89.6–93 m × 18–19.2 m; see
+also their [SOV overview](https://ulstein.com/energy/service-operation-vessel) and
+[Offshore Magazine's "What is an SOV?"](https://www.offshore-mag.com/what-is/article/55358483/spinergie-what-is-an-sov)).
+Its depth and hull exponents are assumptions. In the 3D view it has its accommodation, bridge and helideck
+forward, the gangway tower amidships and an open working deck aft; the cargo ships have their deckhouse aft.
 
 - **HydroExplorer.Core**: domain model and hydrostatics math (no UI, no HTTP)
 - **HydroExplorer.Api**: ASP.NET Core minimal API serving hulls and hydrostatic tables

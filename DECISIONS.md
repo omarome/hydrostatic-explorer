@@ -468,3 +468,24 @@ hull from `HullGeometry.HalfBreadth`: the same curve the table's Awp integrates.
 **Isometric view removed.** `HullIsometricView`, `HullIsometricLayout` and their tests were deleted (agreed)
 once the 3D view replaced the tab; the shared `HullDrawing` helper stays for the side view and the 3D caption.
 The palette's `WaterplaneBrush` is reused by the 3D water.
+
+## Extra: a Service Operation Vessel (hull 6)
+
+**Sources and assumptions.** Length 90 m and beam 19 m sit in the range of Ulstein's SOV/CSOV designs
+(SX195 93 × 18 m, SX222/SX226 89.6 × 19.2 m; ulstein.com/vessels/csov-sov-vessel); Offshore Magazine gives
+"about 80 m" and 80–90 persons on board. Neither publishes depth or draft, so D = 8 m is an assumption, as are
+the exponents (bow 4, stern 5, section 6: Cb ≈ 0.70, a full stern for the aft working deck). The X-BOW shape,
+cranes and daughter craft aren't modelled: the power-law hull form can't express an X-BOW.
+
+**`SuperstructureLayout` in `HullShape`.** The SOV needs its superstructure forward, so the layout became data:
+an enum `AftAccommodation | ForwardAccommodation` as an optional last parameter of `HullShape` (only ship hulls
+have a superstructure). It's decorative; the hydrostatics ignore it. `[JsonConverter(typeof(JsonStringEnumConverter))]`
+on the enum makes the API send `"ForwardAccommodation"` instead of `1`; System.Text.Json is part of .NET, so Core
+still has no package dependencies. Choosing the layout in the app by hull id would have hidden the rule.
+
+**The SOV model.** Three accommodation tiers (0.55–0.85 L, stepping in and back towards the top), the bridge
+on top with a helideck slab overhanging forward, a gangway tower at 0.44–0.48 L with the gangway boom stowed aft
+along the centreline, and nothing on the deck aft of 0.22 L. Two new mesh parts and palette roles:
+`GangwayBrush` (Amber; gangways are painted safety yellow/orange) and `HelideckBrush` (Kelp; helidecks are
+traditionally green). The fixed `SuperstructureHeightFactor` became `MaxHeightAboveDeck(shape)`, since the SOV's
+superstructure (1.41 D, ~11 m) is taller than a coaster's funnel (0.9 D).

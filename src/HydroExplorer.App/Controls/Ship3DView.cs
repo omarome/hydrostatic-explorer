@@ -72,6 +72,12 @@ public sealed class Ship3DView : Control, ICustomHitTest
     public static readonly StyledProperty<IBrush?> FunnelBrushProperty =
         AvaloniaProperty.Register<Ship3DView, IBrush?>(nameof(FunnelBrush));
 
+    public static readonly StyledProperty<IBrush?> GangwayBrushProperty =
+        AvaloniaProperty.Register<Ship3DView, IBrush?>(nameof(GangwayBrush));
+
+    public static readonly StyledProperty<IBrush?> HelideckBrushProperty =
+        AvaloniaProperty.Register<Ship3DView, IBrush?>(nameof(HelideckBrush));
+
     public static readonly StyledProperty<IBrush?> EdgeBrushProperty =
         AvaloniaProperty.Register<Ship3DView, IBrush?>(nameof(EdgeBrush));
 
@@ -86,7 +92,7 @@ public sealed class Ship3DView : Control, ICustomHitTest
         AffectsRender<Ship3DView>(
             LengthProperty, BeamProperty, DepthProperty, ShapeProperty, DraftProperty,
             ForegroundProperty, HintBrushProperty, HullTopsideBrushProperty, HullBottomBrushProperty, DeckBrushProperty,
-            SuperstructureBrushProperty, FunnelBrushProperty, EdgeBrushProperty, WaterplaneBrushProperty, WaterlineBrushProperty);
+            SuperstructureBrushProperty, FunnelBrushProperty, GangwayBrushProperty, HelideckBrushProperty, EdgeBrushProperty, WaterplaneBrushProperty, WaterlineBrushProperty);
     }
 
     public double Length { get => GetValue(LengthProperty); set => SetValue(LengthProperty, value); }
@@ -116,6 +122,12 @@ public sealed class Ship3DView : Control, ICustomHitTest
     public IBrush? SuperstructureBrush { get => GetValue(SuperstructureBrushProperty); set => SetValue(SuperstructureBrushProperty, value); }
 
     public IBrush? FunnelBrush { get => GetValue(FunnelBrushProperty); set => SetValue(FunnelBrushProperty, value); }
+
+    /// <summary>SOV walk-to-work gangway and its tower.</summary>
+    public IBrush? GangwayBrush { get => GetValue(GangwayBrushProperty); set => SetValue(GangwayBrushProperty, value); }
+
+    /// <summary>SOV helicopter deck.</summary>
+    public IBrush? HelideckBrush { get => GetValue(HelideckBrushProperty); set => SetValue(HelideckBrushProperty, value); }
 
     /// <summary>Faint outline of each hull face, which shows the hull's curvature.</summary>
     public IBrush? EdgeBrush { get => GetValue(EdgeBrushProperty); set => SetValue(EdgeBrushProperty, value); }
@@ -278,6 +290,8 @@ public sealed class Ship3DView : Control, ICustomHitTest
             MeshPart.Deck => DeckBrush,
             MeshPart.Superstructure => SuperstructureBrush,
             MeshPart.Funnel => FunnelBrush,
+            MeshPart.Gangway => GangwayBrush,
+            MeshPart.Helideck => HelideckBrush,
             _ => quad.IsBelowWater ? HullBottomBrush : HullTopsideBrush,
         };
         if (baseBrush is not ISolidColorBrush solid)

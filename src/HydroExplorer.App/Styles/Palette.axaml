@@ -65,6 +65,8 @@
             <SolidColorBrush x:Key="DeckBrush" Color="{StaticResource Mist}" />
             <SolidColorBrush x:Key="SuperstructureBrush" Color="{StaticResource Paper}" />
             <SolidColorBrush x:Key="FunnelBrush" Color="{StaticResource DeepSea}" />
+            <SolidColorBrush x:Key="GangwayBrush" Color="{StaticResource Amber}" />     <!-- SOV gangways are painted safety yellow/orange -->
+            <SolidColorBrush x:Key="HelideckBrush" Color="{StaticResource Kelp}" />     <!-- helidecks are traditionally green -->
             <SolidColorBrush x:Key="MeshEdgeBrush" Color="{StaticResource DeepSea}" Opacity="0.18" />
 
             <SolidColorBrush x:Key="SuccessBrush" Color="{StaticResource Kelp}" />
@@ -100,6 +102,8 @@
             <SolidColorBrush x:Key="DeckBrush" Color="{StaticResource SlateMuted}" />
             <SolidColorBrush x:Key="SuperstructureBrush" Color="{StaticResource Foam}" />
             <SolidColorBrush x:Key="FunnelBrush" Color="{StaticResource Navy}" />
+            <SolidColorBrush x:Key="GangwayBrush" Color="{StaticResource Amber}" />
+            <SolidColorBrush x:Key="HelideckBrush" Color="{StaticResource KelpLight}" />
             <SolidColorBrush x:Key="MeshEdgeBrush" Color="{StaticResource Navy}" Opacity="0.25" />
 
             <SolidColorBrush x:Key="SuccessBrush" Color="{StaticResource KelpLight}" />
