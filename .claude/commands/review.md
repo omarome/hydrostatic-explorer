@@ -11,5 +11,6 @@ Check against CLAUDE.md, especially:
 - Styling: colour literals or repeated sizes outside `Styles/Palette.axaml`, colours in ViewModels, inline setters that should be a style class.
 - API: missing validation → 400 ProblemDetails, missing 404, README not updated.
 - Tests: new behaviour without a test.
+- Anything I'd struggle to explain in a code review: unclear names, missing "why" comments, needless cleverness.
 
 Run `dotnet build` and `dotnet test`. Report findings as a short list, most important first, each with file:line and a suggested fix. Don't edit files unless I ask.
