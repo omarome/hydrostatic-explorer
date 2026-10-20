@@ -91,18 +91,20 @@ hulls; the slider and selection flow are unchanged.
 ## Phases
 
 ### Phase 0: safe starting point
-- [ ] Ask me to commit the current palette/style work (it's uncommitted). Then `dotnet build` + `dotnet test` green.
+- [x] Ask me to commit the current palette/style work (it's uncommitted). Then `dotnet build` + `dotnet test` green.
 
 ### Phase 1: hull form + numerical hydrostatics (Core, API)
-- [ ] `HullShape` record; `Hull.Shape` optional parameter; XML docs.
-- [ ] `HullGeometry.HalfBreadth(hull, x, z)` and a reusable `Simpson.Integrate(...)`.
-- [ ] `NumericalHydrostatics.Calculate(hull, draft)`; `HydrostaticsCalculator` dispatches on `Shape`.
-- [ ] Tests: integrator on a box-equivalent form equals the box formulas for every field (1e-9 relative);
+- [x] `HullShape` record; `Hull.Shape` optional parameter; XML docs.
+- [x] `HullGeometry.HalfBreadth(hull, x, z)` and a reusable `Simpson.Integrate(...)`.
+- [x] `NumericalHydrostatics.Calculate(hull, draft)`; `HydrostaticsCalculator` dispatches on `Shape`.
+- [x] Tests: integrator on a box-equivalent form equals the box formulas for every field (1e-9 relative);
       Wigley: ∇(D) = 4/9·L·B·D, Awp(T) = (2/3)·L·B·g(T), KB analytic, IT with ∫(1−ξ²)³ = 32/35 (1e-4);
       Cb at full depth matches the formula above (1e-3); ∇ and Awp increase with draft; doubling stations
       changes ∇ by < 1e-6 relative.
-- [ ] Seed hulls 4 and 5; update `SeedHullRepositoryTests`. API returns `shape` in hull JSON; API test for it.
-- [ ] README (hull list, API sample), DECISIONS.md (why Simpson, why this form), CLAUDE.md ("box = exact, ship = integrated").
+      *Done with two agreed changes (see DECISIONS.md): convergence tolerance 1e-4 (tanker measured ~1e-5),
+      and Awp "never decreases" (equal in double precision near the tanker's deck).*
+- [x] Seed hulls 4 and 5; update `SeedHullRepositoryTests`. API returns `shape` in hull JSON; API test for it.
+- [x] README (hull list, API sample), DECISIONS.md (why Simpson, why this form), CLAUDE.md ("box = exact, ship = integrated").
 
 ### Phase 2: 3D math (App/Rendering)
 - [ ] `OrbitCamera`, `ShipMeshBuilder`, `FaceShading` as above.

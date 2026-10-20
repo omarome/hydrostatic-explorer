@@ -2,7 +2,7 @@ using HydroExplorer.Core.Models;
 
 namespace HydroExplorer.Core.Data;
 
-/// <summary>In-memory repository holding the three sample hulls.</summary>
+/// <summary>In-memory repository holding the sample hulls: three box barges and two ship-shaped hulls.</summary>
 public sealed class SeedHullRepository : IHullRepository
 {
     private static readonly IReadOnlyList<Hull> Hulls = new[]
@@ -11,6 +11,10 @@ public sealed class SeedHullRepository : IHullRepository
         new Hull(1, "Small Barge",       40,    10,     4),
         new Hull(2, "Coastal Barge",     80,    16,     7),
         new Hull(3, "Large Pontoon",    120,    30,    12),
+
+        // Ship hulls. Exponents: bow p, stern p, section q (see HullShape). Cb is at full depth.
+        new Hull(4, "Coastal Tanker",   100,    16,     8, new HullShape(BowExponent: 8, SternExponent: 6, SectionExponent: 10)),  // Cb ≈ 0.79
+        new Hull(5, "Container Feeder", 140,    22,    11, new HullShape(BowExponent: 3, SternExponent: 3, SectionExponent: 5)),   // Cb ≈ 0.63
     };
 
     public IReadOnlyList<Hull> GetAll() => Hulls;
