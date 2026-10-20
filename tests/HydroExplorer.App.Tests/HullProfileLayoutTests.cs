@@ -75,4 +75,42 @@ public class HullProfileLayoutTests
     {
         Assert.Null(HullProfileLayout.Create(new Size(100, 60), length: 40, depth: 4));
     }
+
+    // ---- Room for a superstructure above the deck ----
+
+    [Theory]
+    [InlineData(800, 300)]
+    [InlineData(400, 600)]
+    public void Create_WithASuperstructure_FitsItInsideTheMargins_AndKeepsTheAspectRatio(double width, double height)
+    {
+        // The SOV: 90 × 8 m hull, superstructure up to 1.41 D above the deck.
+        HullProfileLayout layout = HullProfileLayout.Create(new Size(width, height), length: 90, depth: 8, heightAboveDeck: 1.41 * 8)!;
+
+        Assert.Equal(90.0 / 8.0, layout.Hull.Width / layout.Hull.Height, Tolerance);
+        Assert.True(layout.ToScreen(0, 8 + 1.41 * 8).Y >= Margins.Top - Tolerance, "superstructure above the top margin");
+        Assert.True(layout.Hull.Bottom <= height - Margins.Bottom + Tolerance);
+    }
+
+    [Fact]
+    public void Create_WithASuperstructure_DrawsTheHullSmaller_ToMakeRoom()
+    {
+        // A wide, short control, so height is what limits the scale.
+        var size = new Size(1000, 200);
+
+        HullProfileLayout plain = HullProfileLayout.Create(size, length: 40, depth: 10)!;
+        HullProfileLayout withSuperstructure = HullProfileLayout.Create(size, length: 40, depth: 10, heightAboveDeck: 10)!;
+
+        Assert.True(withSuperstructure.Scale < plain.Scale);
+    }
+
+    [Fact]
+    public void ToScreen_MapsHullMetresToPixels()
+    {
+        HullProfileLayout layout = HullProfileLayout.Create(new Size(800, 300), length: 40, depth: 4)!;
+
+        Assert.Equal(new Point(layout.Hull.Left, layout.KeelY), layout.ToScreen(0, 0));
+        Assert.Equal(layout.Hull.Right, layout.ToScreen(40, 0).X, Tolerance);
+        Assert.Equal(layout.Hull.Top, layout.ToScreen(0, 4).Y, Tolerance);
+        Assert.Equal(layout.Hull.Top - 2 * layout.Scale, layout.ToScreen(0, 6).Y, Tolerance);  // not clamped, unlike WaterlineY
+    }
 }

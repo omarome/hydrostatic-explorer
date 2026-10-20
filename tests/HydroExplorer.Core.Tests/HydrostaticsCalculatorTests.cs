@@ -93,4 +93,24 @@ public class HydrostaticsCalculatorTests
 
         Assert.Throws<ArgumentException>(() => HydrostaticsCalculator.Calculate(hull, 1.0));
     }
+
+    [Theory]
+    [InlineData(0, 2, 2)]
+    [InlineData(2, -1, 2)]
+    [InlineData(2, 2, double.NaN)]
+    public void Calculate_ShipWithNonPositiveShapeExponent_Throws(double bow, double stern, double section)
+    {
+        var hull = new Hull(99, "Bad", 100, 10, 8, new HullShape(bow, stern, section));
+
+        Assert.Throws<ArgumentException>(() => HydrostaticsCalculator.Calculate(hull, 1.0));
+    }
+
+    [Fact]
+    public void Calculate_ShipHull_UsesNumericalIntegration()
+    {
+        var wigley = new Hull(99, "Wigley", 100, 10, 8, new HullShape(2, 2, 2));
+
+        Assert.Equal(NumericalHydrostatics.Calculate(wigley, 3.25), HydrostaticsCalculator.Calculate(wigley, 3.25));
+        Assert.NotEqual(100 * 10 * 3.25, HydrostaticsCalculator.Calculate(wigley, 3.25).Volume);  // not the box formula
+    }
 }

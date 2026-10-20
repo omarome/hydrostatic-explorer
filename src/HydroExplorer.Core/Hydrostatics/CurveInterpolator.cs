@@ -7,7 +7,8 @@ public static class CurveInterpolator
 {
     /// <summary>
     /// Displacement at <paramref name="draft"/> by straight-line interpolation between the two nearest
-    /// curve points (exact for a box hull, whose displacement is linear in draft). Returns null if the curve
+    /// curve points. Exact for a box hull, whose displacement is linear in draft; for a ship hull the curve
+    /// bends gently, and with ~100 points the straight-line error is far smaller than a pixel on the chart. Returns null if the curve
     /// is empty or the draft lies outside it.
     /// </summary>
     /// <param name="curve">Points ordered by increasing draft, as returned by the curve endpoint.</param>

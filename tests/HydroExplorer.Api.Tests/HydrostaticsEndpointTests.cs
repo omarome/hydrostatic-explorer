@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Text.Json;
 using HydroExplorer.Core.Data;
 using HydroExplorer.Core.Hydrostatics;
 using HydroExplorer.Core.Models;
@@ -30,6 +31,39 @@ public class HydrostaticsEndpointTests : IClassFixture<ApiFactory>
         var hulls = await _client.GetFromJsonAsync<List<Hull>>("/api/hulls");
 
         Assert.Equal(new SeedHullRepository().GetAll(), hulls);
+    }
+
+    [Fact]
+    public async Task GetHulls_IncludesTheShape_NullForBoxes()
+    {
+        // Check the raw JSON, so the property names the app and curl users see are pinned down too.
+        using JsonDocument json = JsonDocument.Parse(await _client.GetStringAsync("/api/hulls"));
+        JsonElement[] hulls = json.RootElement.EnumerateArray().ToArray();
+
+        Assert.Equal(JsonValueKind.Null, hulls[0].GetProperty("shape").ValueKind);  // 1, Small Barge
+        JsonElement feeder = hulls.Single(h => h.GetProperty("id").GetInt32() == 5).GetProperty("shape");
+        Assert.Equal(3, feeder.GetProperty("bowExponent").GetDouble());
+        Assert.Equal(3, feeder.GetProperty("sternExponent").GetDouble());
+        Assert.Equal(5, feeder.GetProperty("sectionExponent").GetDouble());
+        Assert.Equal("AftAccommodation", feeder.GetProperty("superstructure").GetString());
+
+        // The SOV's layout is sent as a readable name, not a number.
+        JsonElement sov = hulls.Single(h => h.GetProperty("id").GetInt32() == 6).GetProperty("shape");
+        Assert.Equal("ForwardAccommodation", sov.GetProperty("superstructure").GetString());
+    }
+
+    [Fact]
+    public async Task GetHydrostatics_ShipHull_ReturnsIntegratedValues()
+    {
+        Hull feeder = new SeedHullRepository().GetById(5)!;  // Container Feeder: 140 × 22 × 11 m, 1,091 rows
+
+        PagedResult<HydrostaticRow> page = await GetPage("/api/hulls/5/hydrostatics?minDraft=5.5&maxDraft=5.5");
+        var curve = await _client.GetFromJsonAsync<List<CurvePoint>>("/api/hulls/5/hydrostatics/curve?points=10");
+
+        Assert.Equal(1, page.TotalCount);
+        Assert.Equal(HydrostaticsCalculator.Calculate(feeder, 5.5), page.Items[0]);
+        Assert.True(page.Items[0].Volume < feeder.Length * feeder.Beam * 5.5);  // finer than a box
+        Assert.Equal(10, curve!.Count);
     }
 
     // ---- Paging ----
