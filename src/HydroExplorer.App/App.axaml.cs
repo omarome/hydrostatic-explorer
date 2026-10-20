@@ -58,8 +58,9 @@ public partial class App : Application
         });
         services.AddSingleton<ApiStatus>();         // the client reports into it; the status bar reads it
         services.AddSingleton<IHydroApiClient, HydroApiClient>();
-        services.AddSingleton<SelectionService>();
-        services.AddSingleton<IFileSaveService, FileSaveService>();  // the one shared selection every ViewModel receives
+        services.AddSingleton<SelectionService>();  // the one shared selection every ViewModel receives
+        services.AddSingleton<IFileSaveService, FileSaveService>();
+        services.AddSingleton<IThemeService, ThemeService>();
         services.AddSingleton<HydroTableViewModel>();
         services.AddSingleton<HydroChartViewModel>();
         services.AddSingleton<HullViewModel>();

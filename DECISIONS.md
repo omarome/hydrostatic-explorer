@@ -330,3 +330,35 @@ ends (RFC 4180). The ViewModel's `ExportCsvCommand` calls `IFileSaveService`, wh
 Avalonia's async save dialog on the main window. Tests use `FakeFileSaveService` to check the file name, content,
 Cancel and write errors without a window. It exports the current page only, as the brief says. Exporting the
 whole table would mean fetching every page, or adding a CSV endpoint to the API.
+
+## Stretch: single-palette styling
+
+**One `ResourceDictionary` with `ThemeDictionaries`, everything else `{DynamicResource ...}`.** Colours, raw
+hex values included, had crept into `App.axaml` (`#1E88E5`, `#E53935`, `#43A047`, ...), `HydroChartViewModel`
+(LiveCharts `SKColor`s), and the two hull controls (`Color.Parse` in `HullDrawing`/`HullIsometricView`). A
+`style-audit` pass moved every one of them into `Styles/Palette.axaml`: raw `Color` resources (navy → ocean →
+teal → aqua, plus success/error/neutral) at the top, then role-named `SolidColorBrush`es
+(`AccentBrush`, `CurveBrush`, `WaterFillBrush`, `MarkerBrush`, ...) inside `ResourceDictionary.ThemeDictionaries`
+for `Light` and `Dark`. Spacing/size resources (`PanelPadding`, `PanelCornerRadius`, `SmallFontSize`, ...) live
+in the same file. `App.axaml` now only merges the palette and includes `Styles/AppStyles.axaml`, which holds the
+control styles that used to sit inline in `App.axaml`.
+WPF note: the same idea in WPF is a `ResourceDictionary` merged into `App.xaml.Resources` and referenced with
+`DynamicResource`; WPF has no `ThemeDictionaries`, so a light/dark switch means swapping dictionaries at runtime
+yourself (or using a third-party theming library).
+
+**Custom controls get `StyledProperty<IBrush?>` water brushes, not static fields.** `HullProfileView` and
+`HullIsometricView` used to share `static readonly IBrush` fields on `HullDrawing`, built once from hex strings
+— which could never repaint on a theme switch even if the hex moved into a resource, because a static field is
+read once. Each control now exposes its own `SeaBrush`/`SubmergedBrush`/`WaterlineBrush`/`WaterplaneBrush`
+`StyledProperty`s (marked `AffectsRender`, like `Foreground`), set by a `controls|HullProfileView` /
+`controls|HullIsometricView` style in `AppStyles.axaml` from the palette. `Render` treats a null brush as "not
+styled yet" and skips that drawing step, rather than falling back to a hard-coded colour.
+
+**Chart colours resolved in the view, not the ViewModel.** `HydroChartViewModel` built its LiveCharts
+`SolidColorPaint`s from `SKColor` statics in its constructor — a ViewModel holding colours, which also meant the
+chart never reacted to a theme change. The ViewModel now builds its `Series`/`Axes` uncoloured and exposes
+`ApplyColors(SKColor curve, SKColor marker, SKColor markerOutline, SKColor axis)`. `HydroChartView`'s
+code-behind resolves `CurveBrush`/`MarkerBrush`/`MarkerOutlineBrush`/`AxisBrush` from the palette
+(`TryFindResource`, converting the resolved `ISolidColorBrush.Color` to an `SKColor`) and calls `ApplyColors`
+from `OnDataContextChanged` and again on `ActualThemeVariantChanged`, so the chart repaints on a light/dark
+switch without the ViewModel ever naming a colour.

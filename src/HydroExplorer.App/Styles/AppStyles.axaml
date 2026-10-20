@@ -1,0 +1,81 @@
+<!--
+  App-wide control styles. Everything here reads colours and sizes from Palette.axaml via
+  {DynamicResource ...}, so switching theme (or repainting the palette) needs no changes here.
+
+  WPF note: this is the equivalent of a ResourceDictionary of Styles merged in App.xaml, except
+  Avalonia styles select by class ("Border.panel") instead of an x:Key you apply with Style="{StaticResource ...}".
+-->
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="using:HydroExplorer.App.Controls">
+
+    <!-- A framed area: chart and hull view. -->
+    <Style Selector="Border.panel">
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="BorderBrush" Value="{DynamicResource PanelBorderBrush}" />
+        <Setter Property="CornerRadius" Value="{DynamicResource PanelCornerRadius}" />
+        <Setter Property="Padding" Value="{DynamicResource PanelPadding}" />
+    </Style>
+    <Style Selector="TextBlock.panel-title">
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="TextBlock.muted">
+        <Setter Property="Opacity" Value="0.7" />
+    </Style>
+
+    <!-- Error banner above the table. -->
+    <Style Selector="Border.error">
+        <Setter Property="Background" Value="{DynamicResource ErrorBackgroundBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource ErrorBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="{DynamicResource PanelCornerRadius}" />
+        <Setter Property="Padding" Value="{DynamicResource BannerPadding}" />
+        <Setter Property="Margin" Value="0,0,0,8" />
+    </Style>
+
+    <!-- Table: slightly smaller text so all ten columns fit; numbers right-aligned. -->
+    <Style Selector="DataGrid">
+        <Setter Property="FontSize" Value="{DynamicResource TableFontSize}" />
+    </Style>
+    <Style Selector="DataGridCell.number">
+        <Setter Property="HorizontalContentAlignment" Value="Right" />
+    </Style>
+
+    <!-- Hull view tabs (Side / Isometric): Fluent's default tab headers are very large. -->
+    <Style Selector="TabItem">
+        <Setter Property="FontSize" Value="{DynamicResource TableFontSize}" />
+        <Setter Property="MinHeight" Value="30" />
+        <Setter Property="Padding" Value="10,0" />
+    </Style>
+
+    <!-- Status bar connection dot: neutral until the first request, then success or error. -->
+    <Style Selector="Ellipse.status-dot">
+        <Setter Property="Width" Value="{DynamicResource StatusDotSize}" />
+        <Setter Property="Height" Value="{DynamicResource StatusDotSize}" />
+        <Setter Property="Fill" Value="{DynamicResource NeutralStatusBrush}" />
+    </Style>
+    <Style Selector="Ellipse.status-dot.connected">
+        <Setter Property="Fill" Value="{DynamicResource SuccessBrush}" />
+    </Style>
+    <Style Selector="Ellipse.status-dot.disconnected">
+        <Setter Property="Fill" Value="{DynamicResource ErrorBrush}" />
+    </Style>
+
+    <!-- The two hull drawings: outline/labels follow the themed text colour, water follows the
+         themed water brushes. StyledProperty setters here are this project's version of a WPF
+         DependencyProperty style trigger. -->
+    <Style Selector="controls|HullProfileView">
+        <Setter Property="Foreground" Value="{DynamicResource HullStrokeBrush}" />
+        <Setter Property="SeaBrush" Value="{DynamicResource SeaTintBrush}" />
+        <Setter Property="SubmergedBrush" Value="{DynamicResource WaterFillBrush}" />
+        <Setter Property="WaterlineBrush" Value="{DynamicResource WaterlineBrush}" />
+    </Style>
+    <Style Selector="controls|HullIsometricView">
+        <Setter Property="Foreground" Value="{DynamicResource HullStrokeBrush}" />
+        <Setter Property="SubmergedBrush" Value="{DynamicResource WaterFillBrush}" />
+        <Setter Property="WaterlineBrush" Value="{DynamicResource WaterlineBrush}" />
+        <Setter Property="WaterplaneBrush" Value="{DynamicResource WaterplaneBrush}" />
+    </Style>
+
+</Styles>

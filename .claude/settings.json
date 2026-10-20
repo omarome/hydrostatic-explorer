@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dotnet build:*)",
+      "Bash(dotnet test:*)",
+      "Bash(dotnet restore:*)",
+      "Bash(dotnet format:*)",
+      "Bash(dotnet --list-sdks)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(curl http://localhost:5080/*)",
+      "Bash(curl -i http://localhost:5080/*)"
+    ],
+    "ask": [
+      "Bash(dotnet add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)"
+    ],
+    "deny": [
+      "Edit(**/bin/**)",
+      "Edit(**/obj/**)"
+    ]
+  }
+}

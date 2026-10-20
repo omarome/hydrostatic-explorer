@@ -3,8 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.Documents;
 using Avalonia.Layout;
 using Avalonia.Media;
-using Avalonia.Media.Immutable;
-using static HydroExplorer.App.Controls.HullDrawing;  // DrawLabel, Caption, Format, the water brushes
+using static HydroExplorer.App.Controls.HullDrawing;  // DrawLabel, Caption, Format
 
 namespace HydroExplorer.App.Controls;
 
@@ -38,9 +37,25 @@ public sealed class HullIsometricView : Control
     public static readonly StyledProperty<IBrush?> ForegroundProperty =
         TextElement.ForegroundProperty.AddOwner<HullIsometricView>();
 
+    // ---- Water brushes ----
+    //
+    // Set by the "controls|HullIsometricView" style in AppStyles.axaml from the palette's water
+    // brushes, so they repaint on a light/dark theme switch (see HullProfileView for the same pattern).
+
+    public static readonly StyledProperty<IBrush?> SubmergedBrushProperty =
+        AvaloniaProperty.Register<HullIsometricView, IBrush?>(nameof(SubmergedBrush));
+
+    public static readonly StyledProperty<IBrush?> WaterlineBrushProperty =
+        AvaloniaProperty.Register<HullIsometricView, IBrush?>(nameof(WaterlineBrush));
+
+    public static readonly StyledProperty<IBrush?> WaterplaneBrushProperty =
+        AvaloniaProperty.Register<HullIsometricView, IBrush?>(nameof(WaterplaneBrush));
+
     static HullIsometricView()
     {
-        AffectsRender<HullIsometricView>(LengthProperty, BeamProperty, DepthProperty, DraftProperty, ForegroundProperty);
+        AffectsRender<HullIsometricView>(
+            LengthProperty, BeamProperty, DepthProperty, DraftProperty, ForegroundProperty,
+            SubmergedBrushProperty, WaterlineBrushProperty, WaterplaneBrushProperty);
     }
 
     /// <summary>Hull length L (m).</summary>
@@ -77,9 +92,28 @@ public sealed class HullIsometricView : Control
         set => SetValue(ForegroundProperty, value);
     }
 
-    // ---- Drawing ----
+    /// <summary>Darker fill for the submerged part of the two visible faces.</summary>
+    public IBrush? SubmergedBrush
+    {
+        get => GetValue(SubmergedBrushProperty);
+        set => SetValue(SubmergedBrushProperty, value);
+    }
 
-    private static readonly IBrush WaterplaneBrush = new ImmutableSolidColorBrush(Color.Parse("#661E88E5"));
+    /// <summary>Stroke for the waterplane's edges.</summary>
+    public IBrush? WaterlineBrush
+    {
+        get => GetValue(WaterlineBrushProperty);
+        set => SetValue(WaterlineBrushProperty, value);
+    }
+
+    /// <summary>Translucent fill for the horizontal waterplane.</summary>
+    public IBrush? WaterplaneBrush
+    {
+        get => GetValue(WaterplaneBrushProperty);
+        set => SetValue(WaterplaneBrushProperty, value);
+    }
+
+    // ---- Drawing ----
 
     public override void Render(DrawingContext context)
     {
@@ -93,10 +127,15 @@ public sealed class HullIsometricView : Control
             return;
         }
 
-        IBrush foreground = Foreground ?? Brushes.Gray;
+        // Foreground and the water brushes come from the "controls|HullIsometricView" style in
+        // AppStyles.axaml, so they are only null before the control is styled — nothing to draw yet.
+        if (Foreground is not { } foreground)
+        {
+            return;
+        }
+
         var outlinePen = new Pen(foreground, 2);
         var hiddenPen = new Pen(foreground, 1, new DashStyle(new double[] { 4, 3 }, 0));
-        var thinWaterPen = new Pen(WaterlinePen.Brush, 1);
         double? draft = Draft is double t ? Math.Clamp(t, 0, D) : null;
 
         // A local function: a small helper that is only visible inside Render (like a closure in JS).
@@ -107,18 +146,21 @@ public sealed class HullIsometricView : Control
         context.DrawLine(hiddenPen, P(L, B, 0), P(L, 0, 0));
         context.DrawLine(hiddenPen, P(L, B, 0), P(L, B, D));
 
-        if (draft is double T)
+        if (draft is double T && SubmergedBrush is { } submerged && WaterlineBrush is { } waterline && WaterplaneBrush is { } waterplane)
         {
+            var waterlinePen = new Pen(waterline, 2);
+            var thinWaterPen = new Pen(waterline, 1);
+
             // 2. Submerged part of the two visible faces: the side (y = 0) and the end (x = 0).
-            context.DrawGeometry(SubmergedBrush, null, Polygon(P(0, 0, 0), P(L, 0, 0), P(L, 0, T), P(0, 0, T)));
-            context.DrawGeometry(SubmergedBrush, null, Polygon(P(0, 0, 0), P(0, B, 0), P(0, B, T), P(0, 0, T)));
+            context.DrawGeometry(submerged, null, Polygon(P(0, 0, 0), P(L, 0, 0), P(L, 0, T), P(0, 0, T)));
+            context.DrawGeometry(submerged, null, Polygon(P(0, 0, 0), P(0, B, 0), P(0, B, T), P(0, 0, T)));
 
             // 3. The waterplane: a translucent horizontal plane at z = T, the full L × B of the hull.
-            context.DrawGeometry(WaterplaneBrush, null, Polygon(P(0, 0, T), P(L, 0, T), P(L, B, T), P(0, B, T)));
+            context.DrawGeometry(waterplane, null, Polygon(P(0, 0, T), P(L, 0, T), P(L, B, T), P(0, B, T)));
 
             // 4. Its edges: strong on the visible faces, thin on the far side.
-            context.DrawLine(WaterlinePen, P(0, B, T), P(0, 0, T));
-            context.DrawLine(WaterlinePen, P(0, 0, T), P(L, 0, T));
+            context.DrawLine(waterlinePen, P(0, B, T), P(0, 0, T));
+            context.DrawLine(waterlinePen, P(0, 0, T), P(L, 0, T));
             context.DrawLine(thinWaterPen, P(L, 0, T), P(L, B, T));
             context.DrawLine(thinWaterPen, P(L, B, T), P(0, B, T));
         }
