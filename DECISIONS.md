@@ -362,3 +362,38 @@ code-behind resolves `CurveBrush`/`MarkerBrush`/`MarkerOutlineBrush`/`AxisBrush`
 (`TryFindResource`, converting the resolved `ISolidColorBrush.Color` to an `SKColor`) and calls `ApplyColors`
 from `OnDataContextChanged` and again on `ActualThemeVariantChanged`, so the chart repaints on a light/dark
 switch without the ViewModel ever naming a colour.
+
+## 3D ship, phase 1: hull form and numerical hydrostatics
+
+**Simpson's rule.** It's the integration rule naval architects use on offsets tables ("Simpson's first rule"),
+so the code reads like the textbook. It's exact for polynomials up to degree 3, which gives a strong test: on a
+box (constant half-breadth) the integrator must reproduce every box formula to 1e-9. The integrator is run on
+the box seed hulls directly for that test, since `HullShape` can't express the infinite exponents of a box.
+
+**Analytic hull form, not an offsets table.** `y = B/2 · f(ξ) · g(z)` with power-law ends and sections. Three
+numbers describe a believable hull, p = q = 2 is the Wigley hull with closed-form answers to test against, and
+Cb has a closed form (`HullShape.FullDepthBlockCoefficient`). Each half of the ship is integrated separately
+(midships is a station) because the fore and aft exponents differ, and Simpson's rule needs a smooth function
+over each piece. That's why station counts must be 5, 9, …, 41, …
+
+**Convergence test at 1e-4, not the plan's 1e-6.** Measured before writing the test: doubling the stations
+changes the Coastal Tanker's volume by 8.5e-6, and doubling the waterlines by up to 2.5e-5. Its high exponents
+(8 / 6 / 10) have large fourth derivatives, which is Simpson's error term. The Feeder converges to ~1e-16
+along the length. 2.5e-5 is about 0.25 t on 10,000 t, so the default grid (41 × 21) was kept and the test
+tolerance set to 1e-4, rather than doing 4× the work for ~1e-6.
+
+**Awp only "never decreases" in the tests.** Near the deck the tanker's sides are nearly vertical (q = 10):
+`(1 − T/D)^10` falls below 1e-15, so consecutive rows have equal Awp in double precision. Volume is still
+strictly increasing.
+
+**`Hull.Shape` as an optional last parameter.** Existing calls and JSON without `shape` still work; boxes
+serialize `"shape": null`. `FullDepthBlockCoefficient` is a computed property, so it appears in the JSON too
+(read-only, ignored when deserializing); that's handy for curl users and costs nothing.
+
+**No caching yet.** The API still generates the whole table per request. Measured: a Container Feeder page
+takes ~75–95 ms of computation (box barges ~3 ms), on top of the 200 ms simulated latency. That's fine for a
+demo. If it ever matters, caching the generated table per hull (hulls are immutable) is simpler than the plan's
+cumulative integration.
+
+**Interim look in the app.** Until phase 3 the side and isometric views draw hulls 4 and 5 as boxes; the
+table, curve and CSV already show the integrated values.

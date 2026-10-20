@@ -8,11 +8,27 @@ public class SeedHullRepositoryTests
     private readonly SeedHullRepository _repository = new();
 
     [Fact]
-    public void GetAll_ReturnsTheThreeSampleHulls()
+    public void GetAll_ReturnsTheFiveSampleHulls()
     {
         IReadOnlyList<Hull> hulls = _repository.GetAll();
 
-        Assert.Equal(new[] { 1, 2, 3 }, hulls.Select(h => h.Id));
+        Assert.Equal(new[] { 1, 2, 3, 4, 5 }, hulls.Select(h => h.Id));
+    }
+
+    [Fact]
+    public void Hulls1To3_AreBoxes_And4To5_AreShips()
+    {
+        // Other tests rely on this split (box formulas vs integration), and the README demo uses hulls 1–3.
+        Assert.All(_repository.GetAll().Where(h => h.Id <= 3), h => Assert.Null(h.Shape));
+        Assert.All(_repository.GetAll().Where(h => h.Id >= 4), h => Assert.NotNull(h.Shape));
+    }
+
+    [Theory]
+    [InlineData(4, 0.79)]  // Coastal Tanker: full ends and flat bottom
+    [InlineData(5, 0.63)]  // Container Feeder: finer
+    public void ShipHulls_HaveThePlannedBlockCoefficient(int id, double cb)
+    {
+        Assert.Equal(cb, _repository.GetById(id)!.Shape!.FullDepthBlockCoefficient, tolerance: 0.01);
     }
 
     [Fact]

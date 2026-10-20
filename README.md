@@ -1,7 +1,21 @@
 # Hydrostatics Explorer
 
-A small desktop demo app: hydrostatic data for a box-shaped hull, shown in three connected views
-(table, curve, hull side view). The data comes from a local REST API with server-side paging.
+A small desktop demo app: hydrostatic data for a hull, shown in three connected views
+(table, curve, hull view). The data comes from a local REST API with server-side paging.
+
+Five sample hulls: three box barges, whose hydrostatics follow exact formulas, and two ship-shaped hulls,
+whose hydrostatics are integrated numerically with Simpson's rule.
+
+| Id | Hull | L × B × D (m) | Form | Cb at full depth |
+|---|---|---|---|---|
+| 1 | Small Barge | 40 × 10 × 4 | box | 1 |
+| 2 | Coastal Barge | 80 × 16 × 7 | box | 1 |
+| 3 | Large Pontoon | 120 × 30 × 12 | box | 1 |
+| 4 | Coastal Tanker | 100 × 16 × 8 | ship, full (exponents 8 / 6 / 10) | 0.79 |
+| 5 | Container Feeder | 140 × 22 × 11 | ship, fine (exponents 3 / 3 / 5) | 0.63 |
+
+The ship form is `y(x, z) = B/2 · (1 − |ξ|^p) · (1 − (1 − z/D)^q)`, with p for the bow or stern half and q for
+the sections (see `HullShape` and `HullGeometry` in Core).
 
 - **HydroExplorer.Core**: domain model and hydrostatics math (no UI, no HTTP)
 - **HydroExplorer.Api**: ASP.NET Core minimal API serving hulls and hydrostatic tables
@@ -123,8 +137,12 @@ applies without a restart.
 With the API running:
 
 ```bash
-# All hulls
+# All hulls. Ship hulls include their "shape" (bowExponent, sternExponent, sectionExponent,
+# fullDepthBlockCoefficient); box barges have "shape": null
 curl http://localhost:5080/api/hulls
+
+# One row of a ship hull (Container Feeder at T = 5.50 m), computed by numerical integration
+curl "http://localhost:5080/api/hulls/5/hydrostatics?minDraft=5.5&maxDraft=5.5"
 
 # First page (25 rows) for the Large Pontoon. totalCount 1191, totalPages 48
 curl "http://localhost:5080/api/hulls/3/hydrostatics"

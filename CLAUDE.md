@@ -1,6 +1,6 @@
 # HydroExplorer: guide for AI agents
 
-Desktop demo app showing hydrostatic data for box-shaped hulls in three linked views (paged table,
+Desktop demo app showing hydrostatic data for box barges and ship-shaped hulls in three linked views (paged table,
 displacement curve, hull side/isometric view), fed by a local REST API with server-side paging.
 Built as interview prep for a WPF role, so keep code clear, idiomatic and easy to explain.
 
@@ -81,6 +81,9 @@ tests/*.App.Tests        ViewModels with FakeHydroApiClient / FakeFileSaveServic
 - Snap chart/slider drafts with `SnapToTableDraft` so they compare equal (`==`) to row drafts.
 - Keep domain/API values unrounded; format only in the UI.
 - Use `CultureInfo.InvariantCulture` for URLs, CSV and any parsing/formatting that isn't shown to the user.
+- **Box = exact, ship = integrated.** `Hull.Shape == null` → exact box formulas in `HydrostaticsCalculator`;
+  otherwise `NumericalHydrostatics` (Simpson's rule over `HullGeometry.HalfBreadth`). Keep `Calculate`'s
+  signature; the integrator must keep reproducing the box formulas (`NumericalHydrostaticsTests`).
 
 ## API rules
 - Invalid query parameters → 400 ProblemDetails naming the parameter; unknown hull → 404.
