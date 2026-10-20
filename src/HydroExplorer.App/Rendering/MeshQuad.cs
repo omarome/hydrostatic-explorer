@@ -9,6 +9,12 @@ public enum MeshPart
     Deck,
     Superstructure,
     Funnel,
+
+    /// <summary>Walk-to-work gangway and its tower (SOV).</summary>
+    Gangway,
+
+    /// <summary>Helicopter deck on the bridge roof (SOV).</summary>
+    Helideck,
 }
 
 /// <summary>

@@ -126,3 +126,12 @@ hulls; the slider and selection flow are unchanged.
 - [ ] README demo script: add a 3D step (pick Container Feeder, rotate, drag the draft slider).
 - [ ] INTERVIEW_NOTES: questions on Simpson's rule, hull forms, painter's algorithm vs z-buffer, and why no GPU.
 - [ ] Optional extra (ask first): a "Body plan" tab drawing the sections, a classic naval-architecture view.
+
+### Extra: Service Operation Vessel (added on request)
+- [x] Hull 6 "Service Operation Vessel", 90 × 19 × 8 m, exponents 4 / 5 / 6 (Cb ≈ 0.70); integrated hydrostatics.
+- [x] `SuperstructureLayout` (aft / forward accommodation) in `HullShape`, sent as a string in the API JSON.
+- [x] SOV 3D model: forward accommodation tiers, bridge, helideck, gangway tower and stowed gangway, open aft deck;
+      `GangwayBrush` and `HelideckBrush` palette roles.
+- [x] Tests: seeds (6 hulls, layouts, Cb), API JSON, mesh (forward block, helideck on top, gangway amidships,
+      clear aft deck, per-layout height limit, cargo ships unchanged).
+- [ ] Phase 4's side-profile outline follows the layout (SOV block forward).

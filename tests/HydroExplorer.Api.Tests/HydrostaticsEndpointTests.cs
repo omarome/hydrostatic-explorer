@@ -45,6 +45,11 @@ public class HydrostaticsEndpointTests : IClassFixture<ApiFactory>
         Assert.Equal(3, feeder.GetProperty("bowExponent").GetDouble());
         Assert.Equal(3, feeder.GetProperty("sternExponent").GetDouble());
         Assert.Equal(5, feeder.GetProperty("sectionExponent").GetDouble());
+        Assert.Equal("AftAccommodation", feeder.GetProperty("superstructure").GetString());
+
+        // The SOV's layout is sent as a readable name, not a number.
+        JsonElement sov = hulls.Single(h => h.GetProperty("id").GetInt32() == 6).GetProperty("shape");
+        Assert.Equal("ForwardAccommodation", sov.GetProperty("superstructure").GetString());
     }
 
     [Fact]

@@ -31,7 +31,7 @@ public class HydroTableViewModelTests
     {
         await _vm.LoadHullsAsync();
 
-        Assert.Equal(5, _vm.Hulls.Count);
+        Assert.Equal(6, _vm.Hulls.Count);
         Assert.Equal(1, _vm.SelectedHull?.Id);
         Assert.Equal(25, _vm.Rows.Count);
         Assert.Equal(0.10, _vm.Rows[0].Draft);
@@ -191,7 +191,7 @@ public class HydroTableViewModelTests
         await _vm.RefreshCommand.ExecuteAsync(null);
 
         Assert.False(_vm.HasError);
-        Assert.Equal(5, _vm.Hulls.Count);
+        Assert.Equal(6, _vm.Hulls.Count);
         Assert.Equal(25, _vm.Rows.Count);
     }
 

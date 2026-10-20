@@ -23,14 +23,35 @@ public static class ShipMeshBuilder
     /// <summary>Slices from keel to deck (before the waterline row is added).</summary>
     public const int HeightLevels = 12;
 
-    /// <summary>Top of the funnel above the deck, as a fraction of the depth D. Bounds every vertex: z ≤ D · (1 + this).</summary>
-    public const double SuperstructureHeightFactor = 0.9;
-
     // Superstructure proportions (decorative; they don't affect the hydrostatics). Lengths are fractions of L
-    // from the stern, heights fractions of D above the deck: a typical aft-accommodation coaster or feeder.
+    // from the stern, heights fractions of D above the deck.
+
+    // Aft accommodation: a typical coaster, tanker or container feeder.
     private const double DeckhouseAft = 0.04, DeckhouseFore = 0.20, DeckhouseHeight = 0.5, DeckhouseWidth = 0.8;
     private const double BridgeAft = 0.12, BridgeHeight = 0.25;
-    private const double FunnelAft = 0.06, FunnelFore = 0.10, FunnelWidth = 0.25;
+    private const double FunnelAft = 0.06, FunnelFore = 0.10, FunnelWidth = 0.25, FunnelTop = 0.9;
+
+    // Forward accommodation: a Service Operation Vessel. Three accommodation tiers stepping in towards the top,
+    // the bridge with a helideck on its roof, and the walk-to-work gangway tower amidships with the gangway stowed
+    // aft along the centreline. The aft working deck stays clear.
+    private const double AccommodationAft = 0.55, AccommodationFore = 0.85, AccommodationWidth = 0.85;
+    private const double TierHeight = 0.37;                      // three tiers: 1.1 D above the deck
+    private const double TierSetBack = 0.05, TierNarrowing = 0.08;  // each tier starts further forward and is narrower
+    private const double SovBridgeAft = 0.72, SovBridgeHeight = 0.25;
+    private const double HelideckAft = 0.72, HelideckFore = 0.88, HelideckThickness = 0.05;
+    private const double TowerAft = 0.44, TowerFore = 0.48, TowerWidth = 0.12, TowerHeight = 0.9;
+    private const double GangwayAft = 0.22, GangwayWidth = 0.04, GangwayThickness = 0.07;
+
+    /// <summary>
+    /// The highest point of the superstructure above the deck, as a fraction of D: every vertex has
+    /// z ≤ D · (1 + this). Zero for a box barge, which has none.
+    /// </summary>
+    public static double MaxHeightAboveDeck(HullShape? shape) => shape?.Superstructure switch
+    {
+        null => 0,
+        SuperstructureLayout.ForwardAccommodation => 3 * TierHeight + SovBridgeHeight + HelideckThickness,
+        _ => FunnelTop,
+    };
 
     /// <summary>Builds the mesh for <paramref name="hull"/> with the waterline at <paramref name="draft"/> (null: no waterline).</summary>
     /// <exception cref="ArgumentOutOfRangeException">The draft is not in (0, D].</exception>
@@ -53,7 +74,14 @@ public static class ShipMeshBuilder
         else
         {
             // A ship's sides already close the hull: the half-breadth is 0 at the keel and at both ends.
-            AddSuperstructure(quads, hull);
+            if (hull.Shape.Superstructure == SuperstructureLayout.ForwardAccommodation)
+            {
+                AddForwardAccommodation(quads, hull);
+            }
+            else
+            {
+                AddAftAccommodation(quads, hull);
+            }
         }
 
         return new ShipMesh(quads, Bound(quads, Vector3.Min), Bound(quads, Vector3.Max));
@@ -148,7 +176,7 @@ public static class ShipMeshBuilder
         }
     }
 
-    private static void AddSuperstructure(List<MeshQuad> quads, Hull hull)
+    private static void AddAftAccommodation(List<MeshQuad> quads, Hull hull)
     {
         double l = hull.Length, d = hull.Depth;
 
@@ -164,7 +192,37 @@ public static class ShipMeshBuilder
         AddBox(quads, BridgeAft * l, deckhouseFore, halfWidth, deckhouseTop, deckhouseTop + BridgeHeight * d, MeshPart.Superstructure);
 
         // Funnel: a narrow box on the deckhouse roof, aft of the bridge, up to the overall height limit.
-        AddBox(quads, FunnelAft * l, FunnelFore * l, FunnelWidth * halfWidth, deckhouseTop, d + SuperstructureHeightFactor * d, MeshPart.Funnel);
+        AddBox(quads, FunnelAft * l, FunnelFore * l, FunnelWidth * halfWidth, deckhouseTop, d + FunnelTop * d, MeshPart.Funnel);
+    }
+
+    private static void AddForwardAccommodation(List<MeshQuad> quads, Hull hull)
+    {
+        double l = hull.Length, d = hull.Depth;
+
+        // Accommodation in three tiers. The block is in the forward half, where the deck narrows towards the bow,
+        // so its width is set by the narrower end of its footprint; each tier steps in a little.
+        double aft = AccommodationAft * l, fore = AccommodationFore * l;
+        double halfWidth = AccommodationWidth * Math.Min(HullGeometry.HalfBreadth(hull, aft, d), HullGeometry.HalfBreadth(hull, fore, d));
+        double tierHeight = TierHeight * d;
+        double top = d;
+        double tierHalfWidth = halfWidth;
+        for (int tier = 0; tier < 3; tier++)
+        {
+            tierHalfWidth = halfWidth * (1 - TierNarrowing * tier);
+            AddBox(quads, aft + tier * TierSetBack * l, fore, tierHalfWidth, top, top + tierHeight, MeshPart.Superstructure);
+            top += tierHeight;
+        }
+
+        // Bridge on the top tier, as wide as it, with the helideck on its roof overhanging the bow end.
+        double bridgeTop = top + SovBridgeHeight * d;
+        AddBox(quads, SovBridgeAft * l, fore, tierHalfWidth, top, bridgeTop, MeshPart.Superstructure);
+        AddBox(quads, HelideckAft * l, HelideckFore * l, halfWidth, bridgeTop, bridgeTop + HelideckThickness * d, MeshPart.Helideck);
+
+        // Walk-to-work gangway: a tower amidships, with the gangway boom stowed aft along the centreline on top.
+        double towerHalfWidth = TowerWidth * hull.Beam / 2;
+        double towerTop = d + TowerHeight * d;
+        AddBox(quads, TowerAft * l, TowerFore * l, towerHalfWidth, d, towerTop, MeshPart.Gangway);
+        AddBox(quads, GangwayAft * l, TowerFore * l, GangwayWidth * hull.Beam / 2, towerTop, towerTop + GangwayThickness * d, MeshPart.Gangway);
     }
 
     /// <summary>A box standing on <paramref name="bottom"/>, centred on the centreline: four walls and a roof.</summary>

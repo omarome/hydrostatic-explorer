@@ -12,6 +12,7 @@ public class ShipMeshBuilderTests
     private static readonly SeedHullRepository Seeds = new();
     private static readonly Hull Barge = Seeds.GetById(2)!;   // Coastal Barge, a box: 80 × 16 × 7
     private static readonly Hull Feeder = Seeds.GetById(5)!;  // Container Feeder, a ship: 140 × 22 × 11
+    private static readonly Hull Sov = Seeds.GetById(6)!;     // Service Operation Vessel: 90 × 19 × 8, accommodation forward
 
     private static IEnumerable<Vector3> Vertices(ShipMesh mesh) => mesh.Quads.SelectMany(q => new[] { q.A, q.B, q.C, q.D });
 
@@ -21,11 +22,12 @@ public class ShipMeshBuilderTests
     [InlineData(2)]
     [InlineData(4)]
     [InlineData(5)]
+    [InlineData(6)]
     public void EveryVertex_IsInsideTheHullBounds_PlusTheSuperstructure(int hullId)
     {
         Hull hull = Seeds.GetById(hullId)!;
         ShipMesh mesh = ShipMeshBuilder.Build(hull, draft: hull.Depth / 3);
-        float top = (float)(hull.Depth * (1 + ShipMeshBuilder.SuperstructureHeightFactor));
+        float top = (float)(hull.Depth * (1 + ShipMeshBuilder.MaxHeightAboveDeck(hull.Shape)));
 
         foreach (Vector3 v in Vertices(mesh))
         {
@@ -157,6 +159,50 @@ public class ShipMeshBuilderTests
 
         Assert.All(vertices, v => Assert.True(v.Z >= Feeder.Depth - Tolerance, "Superstructure below the deck"));
         Assert.All(vertices, v => Assert.InRange(v.X, 0.04f * 140 - Tolerance, 0.20f * 140 + Tolerance));
+    }
+
+    [Fact]
+    public void MaxHeightAboveDeck_IsZeroForABox_AndTallerForTheSov()
+    {
+        Assert.Equal(0, ShipMeshBuilder.MaxHeightAboveDeck(null));
+        Assert.True(ShipMeshBuilder.MaxHeightAboveDeck(Sov.Shape) > ShipMeshBuilder.MaxHeightAboveDeck(Feeder.Shape));
+    }
+
+    [Fact]
+    public void Sov_HasItsAccommodationForward_AndAHelideckOnTop()
+    {
+        ShipMesh mesh = ShipMeshBuilder.Build(Sov, draft: 6);
+        Vector3[] accommodation = Part(mesh, MeshPart.Superstructure).SelectMany(q => new[] { q.A, q.B, q.C, q.D }).ToArray();
+        Vector3[] helideck = Part(mesh, MeshPart.Helideck).SelectMany(q => new[] { q.A, q.B, q.C, q.D }).ToArray();
+
+        Assert.NotEmpty(accommodation);
+        Assert.All(accommodation, v => Assert.True(v.X > Sov.Length / 2, $"Accommodation at x = {v.X} m is aft of midships"));
+        Assert.NotEmpty(helideck);
+        Assert.Equal(accommodation.Max(v => v.Z), helideck.Min(v => v.Z), Tolerance);  // sits on the highest block
+        Assert.DoesNotContain(mesh.Quads, q => q.Part == MeshPart.Funnel);
+    }
+
+    [Fact]
+    public void Sov_HasAWalkToWorkGangwayAmidships_LeavingTheAftDeckOpen()
+    {
+        ShipMesh mesh = ShipMeshBuilder.Build(Sov, draft: 6);
+        Vector3[] gangway = Part(mesh, MeshPart.Gangway).SelectMany(q => new[] { q.A, q.B, q.C, q.D }).ToArray();
+        float[] aboveDeckX = mesh.Quads
+            .Where(q => q.Part is not (MeshPart.Hull or MeshPart.Deck))
+            .SelectMany(q => new[] { q.A.X, q.B.X, q.C.X, q.D.X })
+            .ToArray();
+
+        Assert.NotEmpty(gangway);
+        Assert.All(gangway, v => Assert.InRange(v.X, 0.2f * 90 - Tolerance, 0.5f * 90 + Tolerance));
+        Assert.True(aboveDeckX.Min() >= 0.2f * 90 - Tolerance, "Nothing stands on the aft working deck");
+    }
+
+    [Fact]
+    public void CargoShips_HaveNoGangwayOrHelideck()
+    {
+        ShipMesh mesh = ShipMeshBuilder.Build(Feeder, draft: 5);
+
+        Assert.DoesNotContain(mesh.Quads, q => q.Part is MeshPart.Gangway or MeshPart.Helideck);
     }
 
     [Fact]

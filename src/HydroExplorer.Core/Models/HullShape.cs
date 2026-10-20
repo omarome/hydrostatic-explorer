@@ -13,7 +13,12 @@ namespace HydroExplorer.Core.Models;
 /// <param name="BowExponent">p for the forward half (bigger → fuller bow).</param>
 /// <param name="SternExponent">p for the aft half (bigger → fuller stern).</param>
 /// <param name="SectionExponent">q (bigger → flatter bottom, more vertical sides).</param>
-public sealed record HullShape(double BowExponent, double SternExponent, double SectionExponent)
+/// <param name="Superstructure">Where the superstructure stands (drawings only). Optional, so older JSON still reads.</param>
+public sealed record HullShape(
+    double BowExponent,
+    double SternExponent,
+    double SectionExponent,
+    SuperstructureLayout Superstructure = SuperstructureLayout.AftAccommodation)
 {
     /// <summary>
     /// Block coefficient Cb = ∇ / (L·B·D) with the hull immersed to the deck. Because the half-breadth is a product

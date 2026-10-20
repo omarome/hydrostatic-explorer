@@ -109,9 +109,10 @@ public class NumericalHydrostaticsTests
     [Theory]
     [InlineData(4)]
     [InlineData(5)]
+    [InlineData(6)]
     public void SeedShip_BlockCoefficientAtFullDepth_MatchesTheFormula(int hullId)
     {
-        Hull ship = Seeds.GetById(hullId)!;  // ids 4–5 are ship hulls (asserted in SeedHullRepositoryTests)
+        Hull ship = Seeds.GetById(hullId)!;  // ids 4–6 are ship hulls (asserted in SeedHullRepositoryTests)
         HydrostaticRow row = NumericalHydrostatics.Calculate(ship, ship.Depth);
 
         double cb = row.Volume / (ship.Length * ship.Beam * ship.Depth);
@@ -122,6 +123,7 @@ public class NumericalHydrostaticsTests
     [Theory]
     [InlineData(4)]
     [InlineData(5)]
+    [InlineData(6)]
     public void SeedShip_VolumeIncreases_AndWaterplaneAreaNeverDecreases_WithDraft(int hullId)
     {
         IReadOnlyList<HydrostaticRow> rows = HydrostaticTableGenerator.Generate(Seeds.GetById(hullId)!);
