@@ -90,13 +90,15 @@ The scaling math (one pixels-per-metre scale to keep the aspect ratio, centred i
 
 ### 8. How is it tested?
 
-- **Core (61 tests):** each formula against hand calculations, drift-free draft generation (exact equality on all
-  1,191 drafts), snapping, interpolation, paging edge cases, CSV formatting.
-- **Api (37 tests):** `WebApplicationFactory<Program>` runs the real API in memory: paging metadata, sorting,
+- **Core (113 tests):** each formula against hand calculations, drift-free draft generation (exact equality on all
+  1,191 drafts), snapping, interpolation, paging edge cases, CSV formatting, Simpson's rule, and the numerical
+  hydrostatics against the box formulas and the analytic Wigley hull.
+- **Api (39 tests):** `WebApplicationFactory<Program>` runs the real API in memory: paging metadata, sorting,
   filtering, `page-of` in both sort orders, 400/404 ProblemDetails, Swagger, and the latency middleware.
-- **App (65 tests):** ViewModels with `FakeHydroApiClient` (can fail, or hold responses to test loading states and
-  races); the real `HydroApiClient` against a stub `HttpMessageHandler`, including a Swedish-locale test proving
-  URLs say `3.25`, not `3,25`; layout math for both custom controls; CSV export with `FakeFileSaveService`.
+- **App (141 tests):** ViewModels with `FakeHydroApiClient` (can fail, or hold responses to test loading states
+  and races); the real `HydroApiClient` against a stub `HttpMessageHandler`, including a Swedish-locale test
+  proving URLs say `3.25`, not `3,25`; CSV export with `FakeFileSaveService`; layout math for the side view and
+  body plan; and the 3D pipeline (camera, mesh, culling and draw order, shading) without a window.
 
 The app was also checked end-to-end by rendering the real window headlessly against the running API with
 simulated clicks and key presses. That was a scratch tool, outside the repo.
@@ -113,8 +115,9 @@ simulated clicks and key presses. That was a scratch tool, outside the repo.
 
 ### 10. What would you change for production, or when porting to WPF?
 
-- **Real hulls** need offsets and numerical integration (Simpson's rule) instead of box formulas. The interfaces
-  stay the same.
+- **Real hulls** would come from an offsets table (measured half-breadths) instead of an analytic form. The
+  integrator already works on any half-breadth function, so only `HullGeometry` would change. Add LCB/LCF columns,
+  and compute GML from a real KG instead of GML ≈ BML.
 - Use the Generic Host with `IHttpClientFactory` and logging. Cache generated tables in the API. Make
   `TotalCount` cheap for a database-backed source.
 - If ViewModels become short-lived (tabs, dialogs), unsubscribe from `SelectionService` or switch to the messenger.
@@ -167,3 +170,57 @@ simulated clicks and key presses. That was a scratch tool, outside the repo.
 value just doesn't appear. Then I use Live Visual Tree or Snoop to check the DataContext and the real property
 values. Then breakpoints in the ViewModel, with break-on-thrown exceptions turned on. Because the logic is in
 ViewModels, I can often reproduce the bug in a unit test instead."
+
+### 12. How are a ship hull's hydrostatics computed? Why Simpson's rule?
+
+For a ship hull there are no closed-form formulas, so `NumericalHydrostatics` integrates the half-breadth
+y(x, z) the way naval architects do from an offsets table:
+
+- **Along the length:** the waterplane area, LCF and second moments (Awp = 2∫y dx, IT = ⅔∫y³ dx,
+  IL = 2∫(x − LCF)²·y dx).
+- **Up from the keel:** volume and KB (∇ = ∫Awp dz, KB = ∫z·Awp dz / ∇).
+
+Simpson's rule fits a parabola through each pair of strips. It's exact for polynomials up to degree 3, which
+gives the key test: run on a box (constant half-breadth), the integrator must reproduce every box formula to 1e-9.
+It's also checked against the analytic Wigley hull (to 1e-4) and for convergence when the grid is doubled.
+`HydrostaticsCalculator.Calculate` keeps one signature and dispatches: box → exact formulas, ship → integration.
+So the API, table, chart and CSV didn't change at all.
+
+### 13. How is the ship hull shape defined?
+
+`y(x, z) = B/2 · f(ξ) · g(z)` with `f = 1 − |ξ|^p` (waterline shape; p per half, bow and stern) and
+`g = 1 − (1 − z/D)^q` (section shape). Three numbers give a believable hull: bigger exponents mean fuller ends and
+flatter sections, p = q = 2 is the Wigley hull, and the block coefficient has a closed form, mean(f)·mean(g).
+Each half is integrated separately, with midships as a station, because the exponents differ fore and aft.
+One function, `HullGeometry.HalfBreadth`, feeds the hydrostatics, the 3D mesh, the waterline and the body plan,
+so every view and every number describe the same hull.
+
+### 14. How does the 3D view work without a 3D engine? Painter's algorithm vs a depth buffer?
+
+All the math is plain `System.Numerics`, in `Rendering/`, and unit-tested:
+
+- **Camera:** `OrbitCamera` builds a view matrix (`CreateLookAt`) and a perspective matrix, then divides by w.
+- **Culling:** faces whose normal points away from the camera are dropped, about half of them.
+- **Painter's algorithm:** `DrawOrder` sorts the rest far to near, so nearer faces paint over farther ones.
+- **Shading:** each face is coloured by Lambert's law, `ambient + diffuse·max(0, n·l)`, with a light that
+  follows the camera.
+
+A GPU instead uses a depth buffer, which keeps the nearest depth per pixel. That's correct for any geometry,
+including faces that pass through each other. The painter's algorithm is per face, so it can misorder
+overlapping faces, but for one closed, convex-ish hull of about a thousand faces it's simple, testable and fast.
+
+The water needs no depth test. The camera orbits a point on the deck with pitch ≥ 5°, so it's always above the
+water, and three passes are enough: below-water faces, then the translucent water, then everything above it.
+
+Why no GPU? No new packages, and it runs anywhere Avalonia runs. Measured at 3.5–9.5 ms a frame while dragging,
+well inside 60 fps. For a real CAD-sized model (millions of triangles) you'd move to the GPU: Avalonia's OpenGL
+control, or in WPF `Viewport3D` or a DirectX interop surface.
+
+### 15. How did you add the SOV without breaking anything?
+
+A Service Operation Vessel needs its accommodation forward, unlike the cargo ships, so the layout became data:
+an enum `SuperstructureLayout` added as an **optional last parameter** of `HullShape`. Existing code and old JSON
+(no `superstructure` field) still work, and `[JsonConverter(typeof(JsonStringEnumConverter))]` sends
+`"ForwardAccommodation"` instead of `1`. The superstructure is a list of boxes (`SuperstructureBoxes`) that both
+the 3D mesh and the side profile draw from, so the two views can't disagree, and tests pin that down. Choosing the
+layout in the app by hull id would have hidden the rule in the UI.

@@ -116,16 +116,16 @@ hulls; the slider and selection flow are unchanged.
 ### Phase 3: Ship3DView control
 - [x] Control, palette roles, style in `AppStyles.axaml`, tab swap in `HullView.axaml` (3D default).
 - [x] `HullViewModel` exposes `Shape`; ViewModel test.
-- [ ] Run the app; tell me exactly what to check (rotate, zoom, reset, slider moves the water, hull switch,
+- [x] Run the app; tell me exactly what to check (rotate, zoom, reset, slider moves the water, hull switch,
       light and dark mode). Fix what I report.
 - [x] Ask before deleting `HullIsometricView`, `HullIsometricLayout` and their tests.
 
 ### Phase 4: polish and story
-- [ ] Side profile: superstructure outline for ship hulls.
-- [ ] Smooth feel: mesh cache, no allocations in hot paths; check dragging stays fluid on the Large Pontoon and Feeder.
-- [ ] README demo script: add a 3D step (pick Container Feeder, rotate, drag the draft slider).
-- [ ] INTERVIEW_NOTES: questions on Simpson's rule, hull forms, painter's algorithm vs z-buffer, and why no GPU.
-- [ ] Optional extra (ask first): a "Body plan" tab drawing the sections, a classic naval-architecture view.
+- [x] Side profile: superstructure outline for ship hulls.
+- [x] Smooth feel: mesh cache, no allocations in hot paths; check dragging stays fluid on the Large Pontoon and Feeder.
+- [x] README demo script: add a 3D step (pick Container Feeder, rotate, drag the draft slider).
+- [x] INTERVIEW_NOTES: questions on Simpson's rule, hull forms, painter's algorithm vs z-buffer, and why no GPU.
+- [x] Optional extra (ask first): a "Body plan" tab drawing the sections, a classic naval-architecture view.
 
 ### Extra: Service Operation Vessel (added on request)
 - [x] Hull 6 "Service Operation Vessel", 90 × 19 × 8 m, exponents 4 / 5 / 6 (Cb ≈ 0.70); integrated hydrostatics.
@@ -134,4 +134,4 @@ hulls; the slider and selection flow are unchanged.
       `GangwayBrush` and `HelideckBrush` palette roles.
 - [x] Tests: seeds (6 hulls, layouts, Cb), API JSON, mesh (forward block, helideck on top, gangway amidships,
       clear aft deck, per-layout height limit, cargo ships unchanged).
-- [ ] Phase 4's side-profile outline follows the layout (SOV block forward).
+- [x] Phase 4's side-profile outline follows the layout (SOV block forward).

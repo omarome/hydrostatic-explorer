@@ -86,11 +86,13 @@ Any of them can change it, and the other two follow.
   previous page at the page edge. **PageUp/PageDown** change page.
 - **Chart**: displacement against draft. **Click or drag** on it to select the nearest draft. If that row
   is on another page, the table jumps to it.
-- **Hull view**: two tabs. **3D** (the default) is a shaded 3D model of the hull, plus the superstructure for
-  ship hulls, with the water at the selected draft: antifouling red below the waterline, see-through water.
-  **Drag** to rotate, **scroll** to zoom, **double-click** to reset the view. **Side** shows the side profile at
-  its true proportions, with the waterline (WL) and the submerged part shaded. Drag the **Draft** slider under
-  either one to scrub through drafts.
+- **Hull view**: three tabs, all drawn from the same hull geometry the hydrostatics integrate.
+  **3D** (the default) is a shaded 3D model of the hull, plus the superstructure for ship hulls, with the water
+  at the selected draft: antifouling red below the waterline, see-through water. **Drag** to rotate, **scroll**
+  to zoom, **double-click** to reset the view. **Side** shows the side profile at its true proportions with the
+  superstructure outlined, the waterline (WL) and the submerged part shaded. **Body plan** shows the hull's
+  cross-sections at stations 1–9, aft half left and forward half right, with the waterline. Drag the **Draft**
+  slider under any of them to scrub through drafts.
 - **Status bar**: green when the API answered the last request, red (with the reason) when it didn't, plus the
   time and duration of the last successful load.
 
@@ -103,13 +105,13 @@ The app opens on the **Small Barge** (40 × 10 × 4 m, 391 rows, 16 pages).
 
 | Time | Do this | Point out |
 |---|---|---|
-| 0:00 | Nothing yet | Three views of one model: table (left), curve (top right), hull side view (bottom right). Green status bar: connected, last load ≈ 200 ms (simulated latency). |
+| 0:00 | Nothing yet | Three views of one model: table (left), curve (top right), hull view (bottom right). Green status bar: connected, last load ≈ 200 ms (simulated latency). |
 | 0:10 | Click the **0.20** row in the table | Orange marker and dashed line jump to 0.20 m on the chart, the waterline moves, the slider follows. No request was made: the status bar's last load time doesn't change. |
 | 0:25 | Click the chart near **T = 3 m** | The table jumps to the page holding that draft (page 12 of 16 for 3.00 m) and highlights the row: one `page-of` request. Marker and waterline move. |
 | 0:40 | Drag the **Draft** slider slowly left and right | Waterline and marker follow instantly. The table catches up, fetching a page only when the draft leaves the current one. |
-| 0:55 | Click a row, then press **↓** repeatedly past the bottom of the page, then **PageUp** | The selection steps across the page boundary onto the next page. PageUp goes back a page. |
-| 1:10 | Click the **Δ** header twice, then set **Rows per page** to 100 | Server-side sort (the ▲/▼ arrow flips; page 1 now starts at 4.00 m). The page count drops to 4. |
-| 1:25 | Pick **Large Pontoon** in the Hull box | Selection clears, curve and hull redraw (120 × 12 m, still to scale), 1,191 rows. |
+| 0:55 | Click a row, press **↓** past the bottom of the page, then click the **Δ** header twice | The selection steps onto the next page. Then a server-side sort: the ▲/▼ arrow flips and page 1 starts at 4.00 m. |
+| 1:05 | Pick **Service Operation Vessel**, click a row, then **drag** in the 3D view | A ship hull: its table is integrated with Simpson's rule (the barges use exact formulas). Rotate to show the accommodation and helideck forward, the yellow walk-to-work gangway amidships, the open aft deck. |
+| 1:15 | Drag the **Draft** slider up, then click **Side** and **Body plan** | The water climbs the red antifouling; the view keeps its angle. The same hull as a side profile and as cross-sections. |
 | 1:35 | In the API terminal press **Ctrl+C**, then click **▶** in the app | Red error banner with Retry; status bar turns red and says why. The table keeps the last good page. |
 | 1:50 | Restart the API (`dotnet run --project src/HydroExplorer.Api`), click **Retry** | Data reloads, banner disappears, status bar turns green. |
 
