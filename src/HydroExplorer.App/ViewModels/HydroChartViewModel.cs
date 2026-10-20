@@ -26,10 +26,6 @@ public partial class HydroChartViewModel : ViewModelBase
     /// <summary>Number of curve points requested from the API. Plenty for a smooth line.</summary>
     public const int CurvePointCount = 100;
 
-    private static readonly SKColor CurveColor = SKColor.Parse("#1E88E5");
-    private static readonly SKColor MarkerColor = SKColor.Parse("#FB8C00");
-    private static readonly SKColor AxisColor = SKColor.Parse("#8A8A8A");
-
     private readonly IHydroApiClient _api;
     private readonly SelectionService _selection;
     private readonly LineSeries<ObservablePoint> _curveSeries;
@@ -42,11 +38,13 @@ public partial class HydroChartViewModel : ViewModelBase
         _api = api;
         _selection = selection;
 
+        // Colours are not set here: ViewModels never hold colours (see CLAUDE.md). HydroChartView
+        // resolves the palette's brushes and calls ApplyColors below, once at startup and again on
+        // every light/dark theme change.
         _curveSeries = new LineSeries<ObservablePoint>
         {
             Name = "Displacement",
             Values = Array.Empty<ObservablePoint>(),
-            Stroke = new SolidColorPaint(CurveColor, 2),
             Fill = null,             // no shaded area under the line
             GeometrySize = 0,        // no dot on every point
             LineSmoothness = 0,      // straight segments between points
@@ -57,15 +55,12 @@ public partial class HydroChartViewModel : ViewModelBase
             Name = "Selected draft",
             Values = Array.Empty<ObservablePoint>(),
             GeometrySize = 14,
-            Fill = new SolidColorPaint(MarkerColor),
-            Stroke = new SolidColorPaint(SKColors.White, 2),
         };
 
         // A section with Xi == Xj draws a vertical line: here a dashed line at the selected draft.
         _markerLine = new RectangularSection
         {
             IsVisible = false,
-            Stroke = new SolidColorPaint(MarkerColor, 1) { PathEffect = new DashEffect(new float[] { 4, 4 }) },
         };
 
         Series = new ISeries[] { _curveSeries, _markerSeries };
@@ -76,6 +71,25 @@ public partial class HydroChartViewModel : ViewModelBase
         // Subscribe to the shared selection. Both objects are app-lifetime singletons, so this
         // subscription never needs removing (see DECISIONS.md, Phase 4).
         _selection.PropertyChanged += OnSelectionChanged;
+    }
+
+    /// <summary>
+    /// Paints every LiveCharts object from colours the view resolved out of Palette.axaml. Called by
+    /// HydroChartView once its DataContext is set, and again whenever the active theme changes.
+    /// </summary>
+    public void ApplyColors(SKColor curve, SKColor marker, SKColor markerOutline, SKColor axisColor)
+    {
+        _curveSeries.Stroke = new SolidColorPaint(curve, 2);
+        _markerSeries.Fill = new SolidColorPaint(marker);
+        _markerSeries.Stroke = new SolidColorPaint(markerOutline, 2);
+        _markerLine.Stroke = new SolidColorPaint(marker, 1) { PathEffect = new DashEffect(new float[] { 4, 4 }) };
+
+        foreach (Axis axis in XAxes.Concat(YAxes))
+        {
+            axis.NamePaint = new SolidColorPaint(axisColor);
+            axis.LabelsPaint = new SolidColorPaint(axisColor);
+            axis.SeparatorsPaint = new SolidColorPaint(axisColor.WithAlpha(40), 1);
+        }
     }
 
     // ---- Plain state (bound by the view, checked by tests) ----
@@ -211,15 +225,14 @@ public partial class HydroChartViewModel : ViewModelBase
         _markerLine.IsVisible = value is not null;
     }
 
+    // NamePaint/LabelsPaint/SeparatorsPaint are left unset here; ApplyColors fills them in once the
+    // view has resolved the palette's AxisBrush.
     private static Axis CreateAxis(string name, Func<double, string> labeler) => new()
     {
         Name = name,
-        NamePaint = new SolidColorPaint(AxisColor),
         NameTextSize = 13,
-        LabelsPaint = new SolidColorPaint(AxisColor),
         TextSize = 12,
         Labeler = labeler,
         MinLimit = 0,
-        SeparatorsPaint = new SolidColorPaint(AxisColor.WithAlpha(40), 1),
     };
 }

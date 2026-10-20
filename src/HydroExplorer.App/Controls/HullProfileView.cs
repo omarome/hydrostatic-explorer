@@ -3,7 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.Documents;
 using Avalonia.Layout;
 using Avalonia.Media;
-using static HydroExplorer.App.Controls.HullDrawing;  // DrawLabel, Format, the water brushes
+using static HydroExplorer.App.Controls.HullDrawing;  // DrawLabel, Caption, Format
 
 namespace HydroExplorer.App.Controls;
 
@@ -48,11 +48,29 @@ public sealed class HullProfileView : Control
     public static readonly StyledProperty<IBrush?> ForegroundProperty =
         TextElement.ForegroundProperty.AddOwner<HullProfileView>();
 
+    // ---- Water brushes ----
+    //
+    // These are plain StyledProperty<IBrush?> (not inherited like Foreground), set by the
+    // "controls|HullProfileView" style in AppStyles.axaml from the palette's water brushes. Keeping
+    // them as properties (rather than static fields, as before) is what lets them repaint on a
+    // light/dark theme switch.
+
+    public static readonly StyledProperty<IBrush?> SeaBrushProperty =
+        AvaloniaProperty.Register<HullProfileView, IBrush?>(nameof(SeaBrush));
+
+    public static readonly StyledProperty<IBrush?> SubmergedBrushProperty =
+        AvaloniaProperty.Register<HullProfileView, IBrush?>(nameof(SubmergedBrush));
+
+    public static readonly StyledProperty<IBrush?> WaterlineBrushProperty =
+        AvaloniaProperty.Register<HullProfileView, IBrush?>(nameof(WaterlineBrush));
+
     static HullProfileView()
     {
         // Redraw (call Render again) whenever any of these properties change.
         // WPF note: FrameworkPropertyMetadataOptions.AffectsRender does this in WPF.
-        AffectsRender<HullProfileView>(LengthProperty, DepthProperty, DraftProperty, ForegroundProperty);
+        AffectsRender<HullProfileView>(
+            LengthProperty, DepthProperty, DraftProperty, ForegroundProperty,
+            SeaBrushProperty, SubmergedBrushProperty, WaterlineBrushProperty);
     }
 
     /// <summary>Hull length L (m).</summary>
@@ -82,6 +100,27 @@ public sealed class HullProfileView : Control
         set => SetValue(ForegroundProperty, value);
     }
 
+    /// <summary>Ambient water tint across the whole width, at and below the waterline.</summary>
+    public IBrush? SeaBrush
+    {
+        get => GetValue(SeaBrushProperty);
+        set => SetValue(SeaBrushProperty, value);
+    }
+
+    /// <summary>Darker fill for the part of the hull that is underwater.</summary>
+    public IBrush? SubmergedBrush
+    {
+        get => GetValue(SubmergedBrushProperty);
+        set => SetValue(SubmergedBrushProperty, value);
+    }
+
+    /// <summary>Stroke for the waterline itself.</summary>
+    public IBrush? WaterlineBrush
+    {
+        get => GetValue(WaterlineBrushProperty);
+        set => SetValue(WaterlineBrushProperty, value);
+    }
+
     // ---- Drawing ----
 
     private const double LineOverhang = 16;  // how far waterline/baseline extend past the hull ends (px)
@@ -100,7 +139,14 @@ public sealed class HullProfileView : Control
             return;
         }
 
-        IBrush foreground = Foreground ?? Brushes.Gray;
+        // Foreground and the water brushes come from the "controls|HullProfileView" style in
+        // AppStyles.axaml, so they are only null before the control is styled (e.g. in a unit test
+        // that never attaches it to a visual tree) — nothing to draw yet in that case.
+        if (Foreground is not { } foreground)
+        {
+            return;
+        }
+
         var outlinePen = new Pen(foreground, 2);
         var thinPen = new Pen(foreground, 1);
         var dashedPen = new Pen(foreground, 1, new DashStyle(new double[] { 4, 3 }, 0));
@@ -109,11 +155,11 @@ public sealed class HullProfileView : Control
         double? waterlineY = draft is null ? null : layout.WaterlineY(draft.Value);
 
         // 1. Water: a light band across the whole width, darker where it fills the hull.
-        if (waterlineY is double seaTop)
+        if (waterlineY is double seaTop && SeaBrush is { } sea && SubmergedBrush is { } submerged)
         {
             double seaBottom = Math.Min(hull.Bottom + 12, Bounds.Height);
-            context.FillRectangle(SeaBrush, new Rect(0, seaTop, Bounds.Width, seaBottom - seaTop));
-            context.FillRectangle(SubmergedBrush, new Rect(hull.Left, seaTop, hull.Width, hull.Bottom - seaTop));
+            context.FillRectangle(sea, new Rect(0, seaTop, Bounds.Width, seaBottom - seaTop));
+            context.FillRectangle(submerged, new Rect(hull.Left, seaTop, hull.Width, hull.Bottom - seaTop));
         }
 
         // 2. Hull outline.
@@ -126,9 +172,10 @@ public sealed class HullProfileView : Control
         DrawLabel(context, "BL", new Point(hull.Right + LineOverhang + 4, keelY + LabelOffset), foreground, HorizontalAlignment.Left);
 
         // 4. Waterline (WL).
-        if (waterlineY is double wl)
+        if (waterlineY is double wl && WaterlineBrush is { } waterline)
         {
-            context.DrawLine(WaterlinePen, new Point(hull.Left - LineOverhang, wl), new Point(hull.Right + LineOverhang, wl));
+            var waterlinePen = new Pen(waterline, 2);
+            context.DrawLine(waterlinePen, new Point(hull.Left - LineOverhang, wl), new Point(hull.Right + LineOverhang, wl));
             DrawLabel(context, "WL", new Point(hull.Right + LineOverhang + 4, wl - LabelOffset), foreground, HorizontalAlignment.Left);
         }
 

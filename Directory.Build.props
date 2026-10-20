@@ -11,5 +11,6 @@
     <!-- Implicit usings: common namespaces (System, System.Linq, ...) are imported in every file. -->
     <ImplicitUsings>enable</ImplicitUsings>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
   </PropertyGroup>
 </Project>

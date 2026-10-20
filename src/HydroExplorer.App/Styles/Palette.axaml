@@ -1,0 +1,111 @@
+<!--
+  The app's single source of truth for colours, spacing and sizes.
+  Colour scheme: deep navy → ocean → teal → aqua (cool marine tones), on white.
+
+  Rules (see CLAUDE.md, "Styling: one source of truth"):
+  - Hex values appear ONLY in the "Raw colours" block below.
+  - Everything else uses the role-named brushes, via {DynamicResource ...}, so light/dark switching works.
+  - C# drawing code reads the same brushes (e.g. brush.Color) instead of parsing hex strings.
+
+  WPF note: the same idea in WPF is a ResourceDictionary merged in App.xaml and referenced with
+  DynamicResource. WPF has no ThemeDictionaries; you'd swap a Light/Dark dictionary at runtime instead.
+-->
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- ===== Raw colours (the only hex values in the app) ===== -->
+    <Color x:Key="Navy">#215469</Color>        <!-- primary: headings, accent, hull outline -->
+    <Color x:Key="Ocean">#34728E</Color>       <!-- chart curve, waterline -->
+    <Color x:Key="Teal">#62A2AA</Color>        <!-- accent in dark mode -->
+    <Color x:Key="Aqua">#9DD1C9</Color>        <!-- water fill, end of the gradient -->
+    <Color x:Key="Steel">#6C94B4</Color>       <!-- secondary blue -->
+    <Color x:Key="SlateMuted">#587C8C</Color>  <!-- secondary text (light mode) -->
+    <Color x:Key="Mist">#C8D4D8</Color>        <!-- disabled controls, hull outline in dark mode -->
+    <Color x:Key="Line">#E8E8EC</Color>        <!-- panel borders (light mode) -->
+    <Color x:Key="Paper">#FFFFFF</Color>
+    <Color x:Key="PaperDim">#F5F7F8</Color>    <!-- window background (light mode) -->
+    <Color x:Key="DeepSea">#10202A</Color>     <!-- window background (dark mode) -->
+    <Color x:Key="DeepSeaPanel">#182A33</Color>
+    <Color x:Key="DeepSeaLine">#2C4450</Color>
+    <Color x:Key="Foam">#E6EEF0</Color>        <!-- text (dark mode) -->
+    <Color x:Key="FoamMuted">#8FAAB5</Color>
+    <Color x:Key="Amber">#E8A33D</Color>       <!-- selection marker: the one warm colour, so it stands out from the blues -->
+    <Color x:Key="Kelp">#3D9A6B</Color>        <!-- success / connected -->
+    <Color x:Key="KelpLight">#5CBF8A</Color>
+    <Color x:Key="Coral">#C8463D</Color>       <!-- error / disconnected -->
+    <Color x:Key="CoralLight">#E06B60</Color>
+
+    <!-- ===== Role brushes, per theme ===== -->
+    <ResourceDictionary.ThemeDictionaries>
+        <ResourceDictionary x:Key="Light">
+            <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource Navy}" />
+            <SolidColorBrush x:Key="HeadingBrush" Color="{StaticResource Navy}" />
+            <SolidColorBrush x:Key="TextBrush" Color="{StaticResource Navy}" />
+            <SolidColorBrush x:Key="MutedTextBrush" Color="{StaticResource SlateMuted}" />
+            <SolidColorBrush x:Key="WindowBackgroundBrush" Color="{StaticResource PaperDim}" />
+            <SolidColorBrush x:Key="PanelBackgroundBrush" Color="{StaticResource Paper}" />
+            <SolidColorBrush x:Key="PanelBorderBrush" Color="{StaticResource Line}" />
+            <SolidColorBrush x:Key="DisabledBrush" Color="{StaticResource Mist}" />
+
+            <SolidColorBrush x:Key="CurveBrush" Color="{StaticResource Ocean}" />
+            <SolidColorBrush x:Key="AxisBrush" Color="{StaticResource SlateMuted}" />
+            <SolidColorBrush x:Key="MarkerBrush" Color="{StaticResource Amber}" />
+            <SolidColorBrush x:Key="MarkerOutlineBrush" Color="{StaticResource Paper}" />
+            <SolidColorBrush x:Key="WaterFillBrush" Color="{StaticResource Aqua}" Opacity="0.45" />
+            <SolidColorBrush x:Key="SeaTintBrush" Color="{StaticResource Aqua}" Opacity="0.20" />
+            <SolidColorBrush x:Key="WaterplaneBrush" Color="{StaticResource Aqua}" Opacity="0.40" />
+            <SolidColorBrush x:Key="WaterlineBrush" Color="{StaticResource Ocean}" />
+            <SolidColorBrush x:Key="HullStrokeBrush" Color="{StaticResource Navy}" />
+            <SolidColorBrush x:Key="HullFillBrush" Color="{StaticResource Steel}" Opacity="0.15" />
+
+            <SolidColorBrush x:Key="SuccessBrush" Color="{StaticResource Kelp}" />
+            <SolidColorBrush x:Key="ErrorBrush" Color="{StaticResource Coral}" />
+            <SolidColorBrush x:Key="ErrorBackgroundBrush" Color="{StaticResource Coral}" Opacity="0.12" />
+            <SolidColorBrush x:Key="NeutralStatusBrush" Color="{StaticResource Mist}" />
+        </ResourceDictionary>
+
+        <ResourceDictionary x:Key="Dark">
+            <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource Teal}" />
+            <SolidColorBrush x:Key="HeadingBrush" Color="{StaticResource Aqua}" />
+            <SolidColorBrush x:Key="TextBrush" Color="{StaticResource Foam}" />
+            <SolidColorBrush x:Key="MutedTextBrush" Color="{StaticResource FoamMuted}" />
+            <SolidColorBrush x:Key="WindowBackgroundBrush" Color="{StaticResource DeepSea}" />
+            <SolidColorBrush x:Key="PanelBackgroundBrush" Color="{StaticResource DeepSeaPanel}" />
+            <SolidColorBrush x:Key="PanelBorderBrush" Color="{StaticResource DeepSeaLine}" />
+            <SolidColorBrush x:Key="DisabledBrush" Color="{StaticResource DeepSeaLine}" />
+
+            <SolidColorBrush x:Key="CurveBrush" Color="{StaticResource Teal}" />
+            <SolidColorBrush x:Key="AxisBrush" Color="{StaticResource FoamMuted}" />
+            <SolidColorBrush x:Key="MarkerBrush" Color="{StaticResource Amber}" />
+            <SolidColorBrush x:Key="MarkerOutlineBrush" Color="{StaticResource DeepSeaPanel}" />
+            <SolidColorBrush x:Key="WaterFillBrush" Color="{StaticResource Aqua}" Opacity="0.35" />
+            <SolidColorBrush x:Key="SeaTintBrush" Color="{StaticResource Aqua}" Opacity="0.15" />
+            <SolidColorBrush x:Key="WaterplaneBrush" Color="{StaticResource Aqua}" Opacity="0.30" />
+            <SolidColorBrush x:Key="WaterlineBrush" Color="{StaticResource Aqua}" />
+            <SolidColorBrush x:Key="HullStrokeBrush" Color="{StaticResource Mist}" />
+            <SolidColorBrush x:Key="HullFillBrush" Color="{StaticResource Steel}" Opacity="0.20" />
+
+            <SolidColorBrush x:Key="SuccessBrush" Color="{StaticResource KelpLight}" />
+            <SolidColorBrush x:Key="ErrorBrush" Color="{StaticResource CoralLight}" />
+            <SolidColorBrush x:Key="ErrorBackgroundBrush" Color="{StaticResource Coral}" Opacity="0.20" />
+            <SolidColorBrush x:Key="NeutralStatusBrush" Color="{StaticResource FoamMuted}" />
+        </ResourceDictionary>
+    </ResourceDictionary.ThemeDictionaries>
+
+    <!-- Header band: the navy → aqua sweep, same in both themes. -->
+    <LinearGradientBrush x:Key="HeaderGradientBrush" StartPoint="0%,0%" EndPoint="100%,0%">
+        <GradientStop Offset="0" Color="{StaticResource Navy}" />
+        <GradientStop Offset="0.4" Color="{StaticResource Ocean}" />
+        <GradientStop Offset="0.75" Color="{StaticResource Teal}" />
+        <GradientStop Offset="1" Color="{StaticResource Aqua}" />
+    </LinearGradientBrush>
+    <SolidColorBrush x:Key="OnHeaderBrush" Color="{StaticResource Paper}" />
+
+    <!-- ===== Spacing and sizes ===== -->
+    <Thickness x:Key="PanelPadding">10,8</Thickness>
+    <Thickness x:Key="BannerPadding">12,8</Thickness>
+    <CornerRadius x:Key="PanelCornerRadius">6</CornerRadius>
+    <x:Double x:Key="SmallFontSize">12</x:Double>
+    <x:Double x:Key="TableFontSize">13</x:Double>
+    <x:Double x:Key="StatusDotSize">9</x:Double>
+</ResourceDictionary>
