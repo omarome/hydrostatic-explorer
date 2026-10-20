@@ -397,3 +397,37 @@ cumulative integration.
 
 **Interim look in the app.** Until phase 3 the side and isometric views draw hulls 4 and 5 as boxes; the
 table, curve and CSV already show the integrated values.
+
+## 3D ship, phase 2: camera, mesh and shading
+
+**Plain `System.Numerics`, no 3D library.** `OrbitCamera` builds the standard view and perspective matrices
+with `Matrix4x4.CreateLookAt` / `CreatePerspectiveFieldOfView` and divides by w itself, so every step of the
+pipeline can be explained and unit-tested. It returns Avalonia's `Point` and takes a `Size`, as the existing
+`*Layout` classes do; those are plain value types, and nothing in `Rendering/` draws.
+
+**Conventions.** World = hull coordinates (x to the bow, y to port, z up). Yaw 0 looks at the starboard side
+with the bow to the right. Pitch is clamped to 5°–85°. The plan's test "yaw 90° maps +x onto the screen axis
++y used to be on" is written as rotation: a point on +x at yaw 90° lands on the same pixel as the matching
+point on the y axis at yaw 0, because at yaw 0 the y axis points into the screen.
+
+**Fit by bounding sphere.** `FitTo` backs off until the box's bounding sphere fills the narrower viewing angle
+(`d = r / sin(halfAngle)`). A sphere looks the same from every side, so the model stays in view however it's
+rotated (tested at several yaws). The cost: a long, narrow ship fills only about half the width. Phase 3 may
+tighten the default zoom.
+
+**`FaceShading` returns a brightness, not a colour.** Lambert `ambient + diffuse · max(0, n·l)` in [0.35, 1].
+The control multiplies a palette colour by it, so colours stay in `Palette.axaml`. Normals use the cross product
+of the diagonals, which works for the slightly non-planar quads on the curved hull. A quad with no area (where
+the sides meet at the bow) gets a zero normal instead of NaN.
+
+**Mesh: one grid row exactly at the draft.** Twelve height levels, with the draft inserted, or an existing level
+moved onto it if it's within 1 % of a slice (no sliver faces). So every hull face is wholly below or wholly above
+the water. The sides use `HullGeometry.HalfBreadth`, the same function the hydrostatics integrate, so the 3D
+hull and the table describe the same hull. Ships need no bottom or end faces (the half-breadth is 0 at the keel
+and the ends); box barges get a bottom, a transom and a flat bow. `MeshQuad` is a `readonly record struct`, so
+sorting about a thousand faces per frame allocates nothing per face.
+
+**Superstructure proportions** (decorative; fractions of L from the stern and of D above the deck): deckhouse
+0.04–0.20 L, 0.5 D high, 80 % of the narrower deck width; bridge 0.12–0.20 L, 0.25 D higher; funnel 0.06–0.10 L
+up to 0.9 D above the deck. A headless render of the mesh (scratch tool, outside the repo) confirmed the shape,
+the waterline split and the culling before the control is written.
