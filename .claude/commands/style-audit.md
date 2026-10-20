@@ -18,7 +18,7 @@ Wait for my OK on the names.
 1. Create or update `src/HydroExplorer.App/Styles/Palette.axaml`: `Color` + `SolidColorBrush` resources inside `ResourceDictionary.ThemeDictionaries` (Light and Dark), plus spacing/size resources. Feed the FluentTheme accent from the same colour so there is exactly one hex value per colour.
 2. Move app-wide styles from `App.axaml` into `Styles/AppStyles.axaml`; `App.axaml` just merges the palette and includes the styles.
 3. Replace every hit with `{DynamicResource ...}` or a style class.
-4. C# drawing code: custom controls (`HullDrawing`, `HullIsometricView`, `HullProfileView`) get `StyledProperty<IBrush>` properties (with `AffectsRender`) whose values are set from the palette in `AppStyles.axaml`. Move chart colours out of `HydroChartViewModel` so the chart's paints are created from palette resources in the view layer, and keep ViewModel tests passing.
+4. C# drawing code: custom controls (`HullDrawing`, `HullProfileView`, `Ship3DView`) get `StyledProperty<IBrush>` properties (with `AffectsRender`) whose values are set from the palette in `AppStyles.axaml`. Move chart colours out of `HydroChartViewModel` so the chart's paints are created from palette resources in the view layer, and keep ViewModel tests passing.
 5. Run `dotnet build` and `dotnet test`. Then grep again: no colour literals may remain outside `Palette.axaml`.
 6. Add a short entry to DECISIONS.md explaining the palette (and the WPF equivalent: a merged ResourceDictionary with `DynamicResource`).
 

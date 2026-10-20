@@ -464,3 +464,7 @@ It sets `ClipToBounds`, so a zoomed-in model doesn't paint over the panel.
 
 **The water.** A translucent rectangle at z = T reaching 0.1 L past the hull, and the waterline drawn round the
 hull from `HullGeometry.HalfBreadth`: the same curve the table's Awp integrates.
+
+**Isometric view removed.** `HullIsometricView`, `HullIsometricLayout` and their tests were deleted (agreed)
+once the 3D view replaced the tab; the shared `HullDrawing` helper stays for the side view and the 3D caption.
+The palette's `WaterplaneBrush` is reused by the 3D water.

@@ -6,9 +6,9 @@ using Avalonia.Media;
 namespace HydroExplorer.App.Controls;
 
 /// <summary>
-/// Small drawing helpers shared by the two hull controls (side view and isometric view), so both draw
+/// Small drawing helpers shared by the hull controls (side view and 3D view), so both draw
 /// labels and captions the same way. Colours are not here: each control exposes its own StyledProperty
-/// brushes (see HullProfileView/HullIsometricView), set from Palette.axaml by a style in AppStyles.axaml.
+/// brushes (see HullProfileView/Ship3DView), set from Palette.axaml by a style in AppStyles.axaml.
 /// </summary>
 internal static class HullDrawing
 {

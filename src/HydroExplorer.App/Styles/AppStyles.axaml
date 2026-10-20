@@ -62,7 +62,7 @@
         <Setter Property="Fill" Value="{DynamicResource ErrorBrush}" />
     </Style>
 
-    <!-- The two hull drawings: outline/labels follow the themed text colour, water follows the
+    <!-- The hull drawings: outline/labels follow the themed text colour, water follows the
          themed water brushes. StyledProperty setters here are this project's version of a WPF
          DependencyProperty style trigger. -->
     <Style Selector="controls|HullProfileView">
@@ -82,12 +82,6 @@
         <Setter Property="EdgeBrush" Value="{DynamicResource MeshEdgeBrush}" />
         <Setter Property="WaterplaneBrush" Value="{DynamicResource WaterplaneBrush}" />
         <Setter Property="WaterlineBrush" Value="{DynamicResource WaterlineBrush}" />
-    </Style>
-    <Style Selector="controls|HullIsometricView">
-        <Setter Property="Foreground" Value="{DynamicResource HullStrokeBrush}" />
-        <Setter Property="SubmergedBrush" Value="{DynamicResource WaterFillBrush}" />
-        <Setter Property="WaterlineBrush" Value="{DynamicResource WaterlineBrush}" />
-        <Setter Property="WaterplaneBrush" Value="{DynamicResource WaterplaneBrush}" />
     </Style>
 
 </Styles>

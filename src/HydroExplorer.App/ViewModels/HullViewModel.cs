@@ -7,7 +7,7 @@ using HydroExplorer.Core.Models;
 namespace HydroExplorer.App.ViewModels;
 
 /// <summary>
-/// Feeds the hull side view, the isometric view and their shared draft slider. No API calls: the hull's dimensions and the draft
+/// Feeds the 3D view, the side view and their shared draft slider. No API calls: the hull's dimensions and the draft
 /// come from the shared selection, and moving the slider writes the draft back to it.
 /// </summary>
 public partial class HullViewModel : ViewModelBase

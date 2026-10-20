@@ -118,7 +118,7 @@ hulls; the slider and selection flow are unchanged.
 - [x] `HullViewModel` exposes `Shape`; ViewModel test.
 - [ ] Run the app; tell me exactly what to check (rotate, zoom, reset, slider moves the water, hull switch,
       light and dark mode). Fix what I report.
-- [ ] Ask before deleting `HullIsometricView`, `HullIsometricLayout` and their tests.
+- [x] Ask before deleting `HullIsometricView`, `HullIsometricLayout` and their tests.
 
 ### Phase 4: polish and story
 - [ ] Side profile: superstructure outline for ship hulls.
