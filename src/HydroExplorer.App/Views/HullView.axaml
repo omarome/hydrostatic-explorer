@@ -12,19 +12,20 @@
                 <TextBlock Text="Hull view" Classes="panel-title" />
             </DockPanel>
 
-            <!-- Two drawings of the same hull, one per tab. Both are our custom controls; their
-                 StyledProperties are bound like any built-in control's. -->
+            <!-- Two drawings of the same hull, one per tab; 3D is first, so it's the default. Both are our
+                 custom controls; their StyledProperties are bound like any built-in control's. -->
             <TabControl Grid.Row="1" Padding="0">
+                <TabItem Header="3D">
+                    <controls:Ship3DView Length="{Binding Length}"
+                                         Beam="{Binding Beam}"
+                                         Depth="{Binding Depth}"
+                                         Shape="{Binding Shape}"
+                                         Draft="{Binding Draft}" />
+                </TabItem>
                 <TabItem Header="Side">
                     <controls:HullProfileView Length="{Binding Length}"
                                               Depth="{Binding Depth}"
                                               Draft="{Binding Draft}" />
-                </TabItem>
-                <TabItem Header="Isometric">
-                    <controls:HullIsometricView Length="{Binding Length}"
-                                                Beam="{Binding Beam}"
-                                                Depth="{Binding Depth}"
-                                                Draft="{Binding Draft}" />
                 </TabItem>
             </TabControl>
 

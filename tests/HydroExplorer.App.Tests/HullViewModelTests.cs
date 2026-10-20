@@ -38,6 +38,17 @@ public class HullViewModelTests
     }
 
     [Fact]
+    public void SelectingAShipHull_ExposesItsShape_AndABoxHasNone()
+    {
+        var shape = new HullShape(3, 3, 5);
+        _selection.SelectedHull = new Hull(5, "Container Feeder", 140, 22, 11, shape);
+        Assert.Equal(shape, _vm.Shape);
+
+        _selection.SelectedHull = CoastalBarge;
+        Assert.Null(_vm.Shape);
+    }
+
+    [Fact]
     public void SelectingARow_MovesTheWaterlineToItsDraft()
     {
         _selection.SelectedHull = CoastalBarge;

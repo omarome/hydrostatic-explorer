@@ -25,6 +25,14 @@ public sealed class OrbitCamera
     // The fitted distance leaves this much room around the bounding sphere.
     private const float FitMargin = 1.05f;
 
+    // Zoom limits, as multiples of the framed model's radius around the target: never inside the model
+    // (so nothing can end up behind the camera), and never so far that it shrinks to a dot.
+    private const float MinDistanceFactor = 1.1f;
+    private const float MaxDistanceFactor = 8f;
+
+    private float _minDistance = 0.01f;
+    private float _maxDistance = float.MaxValue;
+
     private float _pitchDegrees = 30;
     private float _distance = 100;
 
@@ -118,6 +126,77 @@ public sealed class OrbitCamera
 
         // A sphere of radius r seen from distance d fills a half-angle of asin(r / d).
         Distance = MathF.Max(radius, 0.01f) / MathF.Sin(halfAngle) * FitMargin;
+    }
+
+    /// <summary>
+    /// The default view: aims at <paramref name="target"/> and sets the distance so <paramref name="points"/> fill
+    /// about <paramref name="fill"/> of the viewport at the current yaw and pitch. Also sets the zoom limits.
+    /// </summary>
+    /// <remarks>
+    /// Tighter than <see cref="FitTo"/>: a long, narrow ship fills the panel instead of half of it. It starts from
+    /// the safe sphere fit, then corrects the distance a few times, because in a perspective view an object's size
+    /// on screen is roughly proportional to 1 / distance.
+    /// </remarks>
+    public void Frame(IReadOnlyCollection<Vector3> points, Vector3 target, Size viewport, float fill = 0.9f)
+    {
+        Viewport = viewport;
+        Target = target;
+        float radius = MathF.Max(points.Max(p => Vector3.Distance(p, target)), 0.01f);
+        _minDistance = radius * MinDistanceFactor;
+        _maxDistance = radius * MaxDistanceFactor;
+
+        float halfVertical = Radians(FieldOfViewDegrees) / 2;
+        float halfAngle = MathF.Min(halfVertical, MathF.Atan(MathF.Tan(halfVertical) * AspectRatio));
+        Distance = Math.Clamp(radius / MathF.Sin(halfAngle), _minDistance, _maxDistance);
+
+        for (int i = 0; i < 4; i++)
+        {
+            float reach = Reach(points);
+            if (reach <= 0)
+            {
+                return;  // empty viewport: keep the sphere fit
+            }
+
+            Distance = Math.Clamp(Distance * reach / fill, _minDistance, _maxDistance);
+        }
+
+        // The 1 / distance rule is approximate for points near the camera, so back off until everything is inside.
+        while (Reach(points) > 1 && Distance < _maxDistance)
+        {
+            Distance = MathF.Min(Distance * 1.02f, _maxDistance);
+        }
+    }
+
+    /// <summary>
+    /// Multiplies the distance by <paramref name="factor"/> (less than 1 zooms in), within the limits set by
+    /// <see cref="Frame"/>.
+    /// </summary>
+    public void Zoom(float factor) => Distance = Math.Clamp(Distance * factor, _minDistance, _maxDistance);
+
+    /// <summary>
+    /// How far the farthest projected point reaches from the viewport centre towards the nearer edge:
+    /// 1 = touching an edge, more = outside. A point behind the camera counts as far outside.
+    /// </summary>
+    private float Reach(IEnumerable<Vector3> points)
+    {
+        double halfWidth = Viewport.Width / 2, halfHeight = Viewport.Height / 2;
+        if (halfWidth <= 0 || halfHeight <= 0)
+        {
+            return 0;
+        }
+
+        double reach = 0;
+        foreach (Vector3 point in points)
+        {
+            if (Project(point) is not Point p)
+            {
+                return float.MaxValue;
+            }
+
+            reach = Math.Max(reach, Math.Max(Math.Abs(p.X - halfWidth) / halfWidth, Math.Abs(p.Y - halfHeight) / halfHeight));
+        }
+
+        return (float)reach;
     }
 
     private float AspectRatio => Viewport.Height > 0 ? (float)(Viewport.Width / Viewport.Height) : 1;

@@ -19,8 +19,15 @@ public static class FaceShading
     /// <summary>Extra brightness of a face pointing straight at the light (so the maximum is 1).</summary>
     public const float Diffuse = 0.65f;
 
-    /// <summary>Default direction towards the light: high above, slightly aft and to starboard.</summary>
-    public static readonly Vector3 DefaultTowardLight = Vector3.Normalize(new Vector3(-0.3f, -0.5f, 0.8f));
+    /// <summary>
+    /// Direction towards a light that moves with the camera: from the camera's side, raised above it. Whichever
+    /// way the model is turned, the side you look at is lit, and the light from above keeps the deck lit too.
+    /// </summary>
+    public static Vector3 Headlight(Vector3 eye, Vector3 target)
+    {
+        Vector3 towardCamera = Vector3.Normalize(eye - target);
+        return Vector3.Normalize(towardCamera + 0.6f * Vector3.UnitZ);
+    }
 
     /// <summary>
     /// Unit normal of <paramref name="quad"/>, or zero if the face has no area (sides meeting at the bow, say).

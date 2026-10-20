@@ -159,6 +159,29 @@ public class ShipMeshBuilderTests
         Assert.All(vertices, v => Assert.InRange(v.X, 0.04f * 140 - Tolerance, 0.20f * 140 + Tolerance));
     }
 
+    [Fact]
+    public void WaterPlane_IsAtTheDraft_AndReachesPastTheHull()
+    {
+        Vector3[] corners = ShipMeshBuilder.WaterPlane(Feeder, draft: 5.5);
+
+        Assert.Equal(4, corners.Length);
+        Assert.All(corners, c => Assert.Equal(5.5f, c.Z));
+        Assert.True(corners.Min(c => c.X) < 0 && corners.Max(c => c.X) > Feeder.Length);
+        Assert.True(corners.Min(c => c.Y) < -Feeder.Beam / 2 && corners.Max(c => c.Y) > Feeder.Beam / 2);
+    }
+
+    [Fact]
+    public void Waterline_FollowsTheHullAtTheDraft_OnBothSides()
+    {
+        Vector3[] loop = ShipMeshBuilder.Waterline(Feeder, draft: 5.5);
+
+        Assert.All(loop, p => Assert.Equal(5.5f, p.Z));
+        Assert.All(loop, p => Assert.Equal(
+            Core.Hydrostatics.HullGeometry.HalfBreadth(Feeder, p.X, 5.5), MathF.Abs(p.Y), Tolerance));
+        Assert.Contains(loop, p => p.Y < -1);  // starboard
+        Assert.Contains(loop, p => p.Y > 1);   // port
+    }
+
     [Theory]
     [InlineData(0)]
     [InlineData(-1)]

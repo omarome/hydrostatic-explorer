@@ -34,6 +34,7 @@
     <Color x:Key="KelpLight">#5CBF8A</Color>
     <Color x:Key="Coral">#C8463D</Color>       <!-- error / disconnected -->
     <Color x:Key="CoralLight">#E06B60</Color>
+    <Color x:Key="Rust">#A3412E</Color>        <!-- antifouling red: the hull below the waterline in the 3D view -->
 
     <!-- ===== Role brushes, per theme ===== -->
     <ResourceDictionary.ThemeDictionaries>
@@ -57,6 +58,14 @@
             <SolidColorBrush x:Key="WaterlineBrush" Color="{StaticResource Ocean}" />
             <SolidColorBrush x:Key="HullStrokeBrush" Color="{StaticResource Navy}" />
             <SolidColorBrush x:Key="HullFillBrush" Color="{StaticResource Steel}" Opacity="0.15" />
+
+            <!-- 3D ship view: base colours, which the view shades per face (so keep them opaque). -->
+            <SolidColorBrush x:Key="HullTopsideBrush" Color="{StaticResource Navy}" />
+            <SolidColorBrush x:Key="HullBottomBrush" Color="{StaticResource Rust}" />
+            <SolidColorBrush x:Key="DeckBrush" Color="{StaticResource Mist}" />
+            <SolidColorBrush x:Key="SuperstructureBrush" Color="{StaticResource Paper}" />
+            <SolidColorBrush x:Key="FunnelBrush" Color="{StaticResource DeepSea}" />
+            <SolidColorBrush x:Key="MeshEdgeBrush" Color="{StaticResource DeepSea}" Opacity="0.18" />
 
             <SolidColorBrush x:Key="SuccessBrush" Color="{StaticResource Kelp}" />
             <SolidColorBrush x:Key="ErrorBrush" Color="{StaticResource Coral}" />
@@ -84,6 +93,14 @@
             <SolidColorBrush x:Key="WaterlineBrush" Color="{StaticResource Aqua}" />
             <SolidColorBrush x:Key="HullStrokeBrush" Color="{StaticResource Mist}" />
             <SolidColorBrush x:Key="HullFillBrush" Color="{StaticResource Steel}" Opacity="0.20" />
+
+            <!-- Navy and DeepSea would vanish against the dark panel, so the topside and funnel are lighter here. -->
+            <SolidColorBrush x:Key="HullTopsideBrush" Color="{StaticResource Steel}" />
+            <SolidColorBrush x:Key="HullBottomBrush" Color="{StaticResource Rust}" />
+            <SolidColorBrush x:Key="DeckBrush" Color="{StaticResource SlateMuted}" />
+            <SolidColorBrush x:Key="SuperstructureBrush" Color="{StaticResource Foam}" />
+            <SolidColorBrush x:Key="FunnelBrush" Color="{StaticResource Navy}" />
+            <SolidColorBrush x:Key="MeshEdgeBrush" Color="{StaticResource Navy}" Opacity="0.25" />
 
             <SolidColorBrush x:Key="SuccessBrush" Color="{StaticResource KelpLight}" />
             <SolidColorBrush x:Key="ErrorBrush" Color="{StaticResource CoralLight}" />
