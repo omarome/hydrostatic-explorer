@@ -128,7 +128,6 @@ hulls; the slider and selection flow are unchanged.
 - [x] Side profile: superstructure outline for ship hulls.
 - [x] Smooth feel: mesh cache, no allocations in hot paths; check dragging stays fluid on the Large Pontoon and Feeder.
 - [x] README demo script: add a 3D step (pick Container Feeder, rotate, drag the draft slider).
-- [x] INTERVIEW_NOTES: questions on Simpson's rule, hull forms, painter's algorithm vs z-buffer, and why no GPU.
 - [x] Optional extra (ask first): a "Body plan" tab drawing the sections, a classic naval-architecture view.
 
 ### Extra: Service Operation Vessel (added on request)

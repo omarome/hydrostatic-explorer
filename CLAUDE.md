@@ -2,10 +2,10 @@
 
 Desktop demo app showing hydrostatic data for box barges and ship-shaped hulls in three linked views (paged table,
 displacement curve, hull 3D/side/body-plan view), fed by a local REST API with server-side paging.
-Built as interview prep for a WPF role, so keep code clear, idiomatic and easy to explain.
+Keep code clear, idiomatic and easy to explain.
 
 More context: README.md (run, API reference), ARCHITECTURE.md (data flow, selection sharing),
-DECISIONS.md (why each choice was made), INTERVIEW_NOTES.md (likely questions).
+DECISIONS.md (why each choice was made).
 
 ## Stack
 - .NET 8 (SDK pinned in `global.json`), C# latest, xUnit 2.9

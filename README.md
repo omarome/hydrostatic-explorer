@@ -34,7 +34,6 @@ Further reading:
 
 - [ARCHITECTURE.md](ARCHITECTURE.md): projects, data flow, how the selection is shared, React → Avalonia/WPF concept map
 - [DECISIONS.md](DECISIONS.md): every design choice and why, phase by phase
-- [INTERVIEW_NOTES.md](INTERVIEW_NOTES.md): likely technical questions with answers based on this code
 
 ## Prerequisites
 
