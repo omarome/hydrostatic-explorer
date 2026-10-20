@@ -88,6 +88,11 @@ new FrameworkPropertyMetadata(0.0, FrameworkPropertyMetadataOptions.AffectsRende
 The scaling math (one pixels-per-metre scale to keep the aspect ratio, centred inside margins) is in
 `HullProfileLayout`, a pure class with its own tests.
 
+The other two hull controls follow the same pattern: `BodyPlanView` with `BodyPlanLayout`, and `Ship3DView`
+with its math in `Rendering/` (see #14). Colours reach all of them as brush `StyledProperty`s set by a style from
+`Palette.axaml`, so a light/dark switch repaints them without code. `Ship3DView` adds pointer handling
+(drag, wheel, double-click) and `ICustomHitTest`, so the empty area around the ship takes input too.
+
 ### 8. How is it tested?
 
 - **Core (113 tests):** each formula against hand calculations, drift-free draft generation (exact equality on all
@@ -111,7 +116,8 @@ simulated clicks and key presses. That was a scratch tool, outside the repo.
   row's draft and can be matched with `==`.
 - Values like displacement stay unrounded in the domain and API, and the UI formats them for display.
 - URLs are formatted with `InvariantCulture`.
-- On the physics side: MCT uses GML ≈ BML, valid for a box barge where BML ≫ KG (noted in the calculator).
+- On the physics side: MCT uses GML ≈ BML, valid for these hulls because BML (tens to hundreds of metres) is far
+  larger than KG (a few metres); noted in the calculator.
 
 ### 10. What would you change for production, or when porting to WPF?
 

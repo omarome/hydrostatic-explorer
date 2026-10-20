@@ -32,9 +32,9 @@ dotnet run --project src/HydroExplorer.App     # desktop app
 src/HydroExplorer.Core   Models/, Hydrostatics/, Paging/, Export/, Data/. No UI, no HTTP. Depends on nothing.
 src/HydroExplorer.Api    Program.cs, Endpoints/, Queries/ (validate → filter → sort → page), Infrastructure/
 src/HydroExplorer.App    Services/, ViewModels/, Views/ (.axaml), Controls/ (custom-drawn hull views), Rendering/ (3D camera, mesh, draw order, shading; pure and tested)
-tests/*.Core.Tests       formulas, table generation, snapping, paging, CSV
+tests/*.Core.Tests       formulas, numerical hydrostatics (box, Wigley, convergence), table generation, snapping, paging, CSV
 tests/*.Api.Tests        WebApplicationFactory integration tests (ApiFactory.cs)
-tests/*.App.Tests        ViewModels with FakeHydroApiClient / FakeFileSaveService, layout math
+tests/*.App.Tests        ViewModels with FakeHydroApiClient / FakeFileSaveService, layout math, 3D rendering math
 ```
 
 ## Architecture rules

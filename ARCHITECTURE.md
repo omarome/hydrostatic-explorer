@@ -8,10 +8,10 @@ reasons are in [DECISIONS.md](DECISIONS.md).
 
 | Project | Responsibility | Depends on |
 |---|---|---|
-| `HydroExplorer.Core` | Domain: `Hull`, `HydrostaticRow`, `CurvePoint` records; `HydrostaticsCalculator` (formulas); table generation and draft snapping; curve sampling and interpolation; CSV formatting (`HydrostaticCsvWriter`); `PagedResult<T>` / `Pager`; seed hulls. No UI, no HTTP. | nothing |
+| `HydroExplorer.Core` | Domain: `Hull` (with an optional `HullShape` and `SuperstructureLayout` for ships), `HydrostaticRow`, `CurvePoint` records; `HydrostaticsCalculator` (exact box formulas, or `NumericalHydrostatics`: Simpson's rule over `HullGeometry.HalfBreadth` for ships); table generation and draft snapping; curve sampling and interpolation; CSV formatting (`HydrostaticCsvWriter`); `PagedResult<T>` / `Pager`; seed hulls. No UI, no HTTP. | nothing |
 | `HydroExplorer.Api` | ASP.NET Core minimal API: `/api/hulls`, `/hydrostatics` (filter → sort → page), `/hydrostatics/page-of`, `/hydrostatics/curve`. Validation as ProblemDetails, simulated latency middleware, Swagger. | Core |
 | `HydroExplorer.App` | Avalonia 11 MVVM desktop app: API client, shared selection, ViewModels, views, custom `Ship3DView` (with the camera, mesh and painter's-algorithm code in `Rendering/`), `HullProfileView` and `BodyPlanView` controls, `IFileSaveService` for CSV export. | Core (shares the records, so JSON maps onto the same types) |
-| `*.Tests` | xUnit. Core: formulas and paging math. Api: `WebApplicationFactory` integration tests. App: ViewModels with `FakeHydroApiClient`, `HydroApiClient` with a stub HTTP handler, layout math. | the project under test |
+| `*.Tests` | xUnit. Core: formulas and paging math. Api: `WebApplicationFactory` integration tests. App: ViewModels with `FakeHydroApiClient`, `HydroApiClient` with a stub HTTP handler, layout math, and the 3D pipeline (camera, mesh, draw order, shading) without a window. | the project under test |
 
 ## Data flow
 
@@ -74,4 +74,5 @@ instantly. Only the table needs the network, and only when the draft is on anoth
 | `items.map(item => <Row/>)` | `ItemsSource` + `DataTemplate` (hull ComboBox) | same |
 | CSS classes | Style selectors: `Border.panel`, `Classes.connected="{Binding …}"` | keyed `Style` resources (no classes) |
 | Canvas drawing in `useEffect` | `override Render(DrawingContext)` + `AffectsRender` | `OnRender(DrawingContext)` + `AffectsRender` metadata |
+| A three.js scene | `Ship3DView`: own camera matrices, back-face culling and painter's algorithm (`Rendering/`), drawn as 2D polygons | `Viewport3D` (built-in retained 3D) or the same 2D approach |
 | Mocking `fetch` in tests | `FakeHydroApiClient`, or a stub `HttpMessageHandler` | same |

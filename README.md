@@ -187,11 +187,14 @@ HydroExplorer.sln
 Directory.Build.props          # settings shared by all projects (net8.0, nullable, warnings as errors)
 global.json                    # pins the .NET SDK version
 src/
-  HydroExplorer.Core/          # Models/, Hydrostatics/ (formulas, table, curve), Paging/, Data/ (seed hulls)
+  HydroExplorer.Core/          # Models/ (hull, hull shape, rows), Hydrostatics/ (box formulas, hull geometry,
+                               #   Simpson's-rule integration, table, curve), Paging/, Export/ (CSV), Data/ (seed hulls)
   HydroExplorer.Api/           # Program.cs, Endpoints/, Queries/ (validation, filter/sort/page), Infrastructure/ (latency)
-  HydroExplorer.App/           # Services/ (API client, selection, status), ViewModels/, Views/, Controls/ (hull drawing)
+  HydroExplorer.App/           # Services/ (API client, selection, status, file save, theme), ViewModels/, Views/,
+                               #   Controls/ (3D, side and body-plan drawings), Rendering/ (3D camera, mesh, draw order,
+                               #   shading), Styles/ (Palette.axaml: the only colours; AppStyles.axaml)
 tests/
-  HydroExplorer.Core.Tests/    # formulas, table generation, snapping, interpolation, paging
-  HydroExplorer.Api.Tests/     # WebApplicationFactory: endpoints, paging, sorting, filtering, page-of, 400/404
-  HydroExplorer.App.Tests/     # ViewModels with a fake API client, HTTP client with a stub handler, layout math
+  HydroExplorer.Core.Tests/    # formulas, numerical hydrostatics (box, Wigley, convergence), table, snapping, paging, CSV
+  HydroExplorer.Api.Tests/     # WebApplicationFactory: endpoints, paging, sorting, filtering, page-of, hull JSON, 400/404
+  HydroExplorer.App.Tests/     # ViewModels with fakes, HTTP client with a stub handler, layout math, the 3D pipeline
 ```

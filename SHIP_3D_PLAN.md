@@ -4,6 +4,10 @@ Goal: replace the box-only hull with ship-shaped hulls whose **table, curve and 
 replace the isometric tab with an interactive, shaded 3D view of the whole ship (hull + decorative
 superstructure). No new NuGet packages. Built in phases with `/ship-3d <phase>`; tick the boxes as you go.
 
+**Status (2026-10-21): complete.** All phases, the SOV extra and the Body plan tab are done and committed.
+Deviations from this plan, with their reasons, are in DECISIONS.md under "3D ship, phase 1–4" and "Extra: a
+Service Operation Vessel".
+
 ## Decisions (agreed)
 - **Real math:** ship hulls get hydrostatics by numerical integration (Simpson's rule) over an analytic hull form.
   Box barges keep their exact formulas. The integrator must reproduce the box formulas exactly (that's the main test).
