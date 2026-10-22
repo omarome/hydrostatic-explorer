@@ -3,7 +3,7 @@
 <img width="2878" height="1698" alt="image" src="https://github.com/user-attachments/assets/1872e443-b7b9-44ca-b7d9-c1f78aa185f5" />
 
 
-A small desktop demo app: hydrostatic data for a hull, shown in three connected views(dark/light mode)
+A small desktop app: hydrostatic data for a hull, shown in three connected views(dark/light mode)
 (table, curve, hull view). The data comes from a local REST API with server-side paging.
 
 Six sample hulls: three box barges, whose hydrostatics follow exact formulas, and three ship-shaped hulls,
@@ -99,23 +99,6 @@ Any of them can change it, and the other two follow.
   time and duration of the last successful load.
 
 Every selection snaps to the table's 1 cm grid (for example a click at 3.2547 m selects 3.25 m).
-
-## Demo script (2 minutes)
-
-Before the demo, start the API and the app (see [Run](#run)) and leave both terminals visible.
-The app opens on the **Small Barge** (40 × 10 × 4 m, 391 rows, 16 pages).
-
-| Time | Do this | Point out |
-|---|---|---|
-| 0:00 | Nothing yet | Three views of one model: table (left), curve (top right), hull view (bottom right). Green status bar: connected, last load ≈ 200 ms (simulated latency). |
-| 0:10 | Click the **0.20** row in the table | Orange marker and dashed line jump to 0.20 m on the chart, the waterline moves, the slider follows. No request was made: the status bar's last load time doesn't change. |
-| 0:25 | Click the chart near **T = 3 m** | The table jumps to the page holding that draft (page 12 of 16 for 3.00 m) and highlights the row: one `page-of` request. Marker and waterline move. |
-| 0:40 | Drag the **Draft** slider slowly left and right | Waterline and marker follow instantly. The table catches up, fetching a page only when the draft leaves the current one. |
-| 0:55 | Click a row, press **↓** past the bottom of the page, then click the **Δ** header twice | The selection steps onto the next page. Then a server-side sort: the ▲/▼ arrow flips and page 1 starts at 4.00 m. |
-| 1:05 | Pick **Service Operation Vessel**, click a row, then **drag** in the 3D view | A ship hull: its table is integrated with Simpson's rule (the barges use exact formulas). Rotate to show the accommodation and helideck forward, the yellow walk-to-work gangway amidships, the open aft deck. |
-| 1:15 | Drag the **Draft** slider up, then click **Side** and **Body plan** | The water climbs the red antifouling; the view keeps its angle. The same hull as a side profile and as cross-sections. |
-| 1:35 | In the API terminal press **Ctrl+C**, then click **▶** in the app | Red error banner with Retry; status bar turns red and says why. The table keeps the last good page. |
-| 1:50 | Restart the API (`dotnet run --project src/HydroExplorer.Api`), click **Retry** | Data reloads, banner disappears, status bar turns green. |
 
 ## API reference
 

@@ -18,7 +18,7 @@ public class SeedHullRepositoryTests
     [Fact]
     public void Hulls1To3_AreBoxes_And4To6_AreShips()
     {
-        // Other tests rely on this split (box formulas vs integration), and the README demo uses hulls 1–3.
+        // Other tests rely on this split (box formulas vs integration).
         Assert.All(_repository.GetAll().Where(h => h.Id <= 3), h => Assert.Null(h.Shape));
         Assert.All(_repository.GetAll().Where(h => h.Id >= 4), h => Assert.NotNull(h.Shape));
     }

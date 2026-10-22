@@ -38,7 +38,7 @@ g(z) = 1 − (1 − z/D)^q             (section shape: bigger q → flatter bott
 New Core type: `HullShape(double BowExponent, double SternExponent, double SectionExponent)`.
 `Hull` gets an optional last parameter `HullShape? Shape = null` (null = box), so existing code and JSON keep working.
 
-Seed hulls (keep ids 1–3 unchanged so the README demo script still holds):
+Seed hulls (keep ids 1–3 unchanged; tests rely on them being box barges):
 
 | Id | Name | L × B × D (m) | pFore / pAft / q | ≈ Cb |
 |---|---|---|---|---|
@@ -127,7 +127,6 @@ hulls; the slider and selection flow are unchanged.
 ### Phase 4: polish and story
 - [x] Side profile: superstructure outline for ship hulls.
 - [x] Smooth feel: mesh cache, no allocations in hot paths; check dragging stays fluid on the Large Pontoon and Feeder.
-- [x] README demo script: add a 3D step (pick Container Feeder, rotate, drag the draft slider).
 - [x] Optional extra (ask first): a "Body plan" tab drawing the sections, a classic naval-architecture view.
 
 ### Extra: Service Operation Vessel (added on request)

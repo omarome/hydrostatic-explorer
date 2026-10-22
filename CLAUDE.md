@@ -1,6 +1,6 @@
 # HydroExplorer: guide for AI agents
 
-Desktop demo app showing hydrostatic data for box barges and ship-shaped hulls in three linked views (paged table,
+Desktop app showing hydrostatic data for box barges and ship-shaped hulls in three linked views (paged table,
 displacement curve, hull 3D/side/body-plan view), fed by a local REST API with server-side paging.
 Keep code clear, idiomatic and easy to explain.
 

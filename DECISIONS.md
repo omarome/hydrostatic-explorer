@@ -32,7 +32,7 @@ renaming ViewModel types with reflection ("FooViewModel" → "FooView"). This ap
 so it places them explicitly in XAML. That is easier to follow and avoids hidden convention-based magic.
 
 **Fixed API port 5080, HTTP only.** The launch profile has no HTTPS, so there's no local dev certificate
-to set up on a fresh machine. That's fine for a localhost demo.
+to set up on a fresh machine. That's fine for a localhost app.
 
 **.NET SDK install location.** The SDK was installed per user into `~/.dotnet` with Microsoft's
 `dotnet-install.sh`, which needs no admin rights. `~/.zshrc` adds it to `PATH` and sets `DOTNET_ROOT`.
@@ -222,7 +222,7 @@ position without rendering anything. The control just draws the rectangles it is
 
 **True aspect ratio, so the hulls look thin.** All three sample hulls are about 10:1 (length to depth), so the
 side view is a long, shallow strip. That is correct for a barge, and the brief asks for the correct aspect ratio.
-Exaggerating the vertical scale is common in naval-architecture plots, but it would need explaining in a demo.
+Exaggerating the vertical scale is common in naval-architecture plots, but it would need explaining to every viewer.
 
 **Theme-aware drawing.** The control adds itself as an owner of `TextElement.ForegroundProperty`, so it
 inherits the theme's text colour. Outline, dimension lines and labels use it and work in light and dark mode.
@@ -392,7 +392,7 @@ serialize `"shape": null`. `FullDepthBlockCoefficient` is a computed property, s
 
 **No caching yet.** The API still generates the whole table per request. Measured: a Container Feeder page
 takes ~75–95 ms of computation (box barges ~3 ms), on top of the 200 ms simulated latency. That's fine for a
-demo. If it ever matters, caching the generated table per hull (hulls are immutable) is simpler than the plan's
+local app. If it ever matters, caching the generated table per hull (hulls are immutable) is simpler than the plan's
 cumulative integration.
 
 **Interim look in the app.** Until phase 3 the side and isometric views draw hulls 4 and 5 as boxes; the
@@ -519,5 +519,3 @@ across. Stations 0 and 10 are left out: a ship has no width there. Section and s
 `BodyPlanLayout`, tested like the other layouts. The caption sits at the top edge, as in the 3D view, so it can't
 collide with the "CL" label.
 
-**Demo script.** The keyboard and sorting steps were merged into one row to make room for the 3D steps (SOV,
-rotate, slider, Side and Body plan) and keep the script at about 2 minutes.
